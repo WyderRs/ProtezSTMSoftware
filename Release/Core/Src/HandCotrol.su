@@ -1,0 +1,15 @@
+../Core/Src/HandCotrol.c:39:17:Motor_Settings	16	static
+../Core/Src/HandCotrol.c:66:6:Motor_SetDuty	0	static
+../Core/Src/HandCotrol.c:75:6:Motor_SetTimeSettings	0	static
+../Core/Src/HandCotrol.c:81:6:Motor_Start	8	static
+../Core/Src/HandCotrol.c:90:6:Motor_Stop	8	static
+../Core/Src/HandCotrol.c:153:12:CheckStateAllMotor	12	static
+../Core/Src/HandCotrol.c:190:6:Init_TimerMotor	0	static
+../Core/Src/HandCotrol.c:205:6:ADC_Timer2_Init	40	static
+../Core/Src/HandCotrol.c:231:6:ADC_Setchannel	0	static
+../Core/Src/HandCotrol.c:235:6:ADC_Init	48	static
+../Core/Src/HandCotrol.c:269:6:ProtezInit	24	static
+../Core/Src/HandCotrol.c:312:6:StartMeasurement	8	static
+../Core/Src/HandCotrol.c:142:6:HandProtezStartInstruction	16	static
+../Core/Src/HandCotrol.c:101:6:HandProtezRecvInstruction	8	static
+../Core/Src/HandCotrol.c:317:6:StopMeasurement	8	static
