@@ -51,20 +51,21 @@ uint32_t d_EncCnt[6];
 uint32_t EncTime[6];
 uint32_t EncTimeNow[6];
 uint32_t EncTimeOld[6];
-uint32_t Enc_Start[6];
 
 uint32_t d_EncCntOld[6];
 uint32_t d_EncTime[6][500];
 double d_Velocity[6][500];
 
-extern uint32_t TEST_GLB_TIM10_CNT;
 
-double TEST_Angle[200];
-double ccc;
 double RegVal[1000];
-double ccc1;
 
 uint16_t SpeedAngleMas[2500];
+
+
+uint32_t TEST_TCNT;
+_Bool flag_motor_is_move = false;
+
+
 
 /* USER CODE END PTD */
 
@@ -933,35 +934,41 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 		if (HAL_GPIO_ReadPin(Motor[0].md_encod_sn.GPIOsupSens, Motor[0].md_encod_sn.PINsupSens) == GPIO_PIN_SET)
 		{
-			EncTimeNow[0] = TEST_GLB_TIM10_CNT;
-			EncCntNow[0] = Motor[0].md_encod_sn.cnt;
+			EncTimeNow[0] = Motor[0].md_drum_cnt;
+//			EncCntNow[0] = Motor[0].md_encod_sn.cnt;
 			if(Motor[0].md_encod_sn.cnt == 0)
 			{
-				ContRegulatorValue = 50;
+//				ContRegulatorValue = 50;
 				EncTimeOld[0] = EncTimeNow[0];
 			}
 			if(EncTimeOld[0] != EncTimeNow[0])
 			{
-				EncTime[0] += (EncTimeNow[0] - EncTimeOld[0]);
+//				EncTime[0] += (EncTimeNow[0] - EncTimeOld[0]);
 				d_EncTime[0][Motor[0].md_encod_sn.cnt] = (EncTimeNow[0] - EncTimeOld[0]);
 
 				RegVal[Motor[0].md_encod_sn.cnt] = Coef_P * ((((1.0 * Motor[0].md_FL2_Angle) / 1.5) / (Motor[0].md_FL2_Time * 0.01))
-						- (10000.0 / (1.0 * d_EncTime[0][Motor[0].md_encod_sn.cnt])));
+						- (10000.0 / (1.0 * (d_EncTime[0][Motor[0].md_encod_sn.cnt] + TEST_TCNT))));
+
+
 
 				int16_t temp = ContRegulatorValue + (int16_t)(RegVal[Motor[0].md_encod_sn.cnt]);
 				if(temp >= 900) ContRegulatorValue = 900;
 				else if(temp <= 50) ContRegulatorValue = 50;
 				else ContRegulatorValue = temp;
+
+
+				SpeedAngleMas[Motor[0].md_CountDataToRecv] = ContRegulatorValue;
+				Motor[0].md_CountDataToRecv++;
+				TEST_TCNT = 0;
+
 			}
-			SpeedAngleMas[Motor[0].md_encod_sn.cnt] = ContRegulatorValue;
 
 
 			EncTimeOld[0] = EncTimeNow[0];
-			d_EncCnt[0] = EncCntNow[0] - EncCntOld[0];
-			EncCnt[0] += EncCntNow[0] - EncCntOld[0];
-			EncCntOld[0] = EncCntNow[0];
+//			d_EncCnt[0] = EncCntNow[0] - EncCntOld[0];
+//			EncCnt[0] += EncCntNow[0] - EncCntOld[0];
+//			EncCntOld[0] = EncCntNow[0];
 			Motor[0].md_encod_sn.cnt++;
-			Motor[0].md_CountDataToRecv++;
 
 
 			if(Motor[0].md_st == WORKING)
@@ -992,6 +999,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 					Motor[0].md_htim->Instance->CCR4 = Motor[0].md_chr_value;
 				}
 			}
+			flag_motor_is_move = true;
 		}
 		else if (HAL_GPIO_ReadPin(Motor[0].md_encod_sn.GPIOsupSens, Motor[0].md_encod_sn.PINsupSens) == GPIO_PIN_RESET)
 		{

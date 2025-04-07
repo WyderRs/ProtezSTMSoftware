@@ -27,28 +27,26 @@ uint8_t GLB_TypeCtrl;					// Global type control
 FL2_TypeCtrlMove TCM;					// Type control moving motor
 /**************************************************************************************/
 
-extern uint32_t Enc_Start[6];
 /**************************************************************************************/
 /*PID Regulator*/
 double Coef_P = 0.05;
 double Coef_T = 100.0;
 uint16_t ContRegulatorValue;
-uint32_t TEST_GLB_TIM10_CNT;
+uint32_t TEST_GLB_TIM10_CNT1;
 /**************************************************************************************/
 extern uint32_t EncTime[6];
 extern uint32_t EncTimeNow[6];
 extern uint32_t EncTimeOld[6];
-extern uint32_t Enc_Start[6];
+
 
 extern uint32_t EncCnt[6];
 extern uint32_t EncCntNow[6];
 extern uint32_t EncCntOld[6];
 extern uint32_t d_EncCnt[6];
 
-extern double ccc;
 extern double RegVal[1000];
 extern uint32_t d_EncTime[6][500];
-extern float SpeedAngleMas[2500];
+
 
 
 /*Extern definition*/
@@ -60,6 +58,7 @@ extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim10;
+
 
 
 /*
@@ -517,12 +516,12 @@ void Rcv_FL_2_SetFeedBack(uint8_t byte, uint8_t num_motor)
 {
 	if(byte & 0x01)
 	{
-		Motor[num_motor].EnableFeedBack = true;
+		Motor[num_motor].md_EnableFeedBack = true;
 		ProtezGlobalConf.FeedBack = true;	// если хоть один установился
 	}
 	else if (!(byte & 0x01))
 	{
-		Motor[num_motor].EnableFeedBack = false;
+		Motor[num_motor].md_EnableFeedBack = false;
 		ProtezGlobalConf.FeedBack = false;	// если хоть один установился
 	}
 }
@@ -561,7 +560,7 @@ void FL_2_HandProtezStartInstruction(void)
 		{
 			TCM = ANGLE_TIME;
 			/*Calculate first error in definition*/
-			FL_2_Motor_SetDuty(&Motor[i], 0, 60);
+//			FL_2_Motor_SetDuty(&Motor[i], 0, 60);
 
 			if(Motor[i].md_stParam.fl2_angle && Motor[i].md_stParam.fl2_time) Motor[i].md_st = CONFIGURATED;
 

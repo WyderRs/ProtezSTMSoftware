@@ -170,7 +170,10 @@ typedef struct MotorDefinition
 
 	double md_FL2_NowAngle;
 
-	_Bool EnableFeedBack;
+	_Bool md_EnableFeedBack;
+
+	uint32_t md_drum_cnt;			// Drum counter motor
+
 //	MotorFlagParam md_ConfigSettingsParam;	// Flags init parameters
 } MotorDefinition;
 typedef struct PRGlbDef

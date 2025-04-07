@@ -43,9 +43,15 @@ extern FL2_TypeCtrlMove TCM;
 extern uint16_t ContRegulatorValue;
 
 extern uint32_t TEST_cntTim2;
-extern uint32_t TEST_GLB_TIM10_CNT;
+
+
 
 extern uint16_t SpeedAngleMas[2500];
+
+extern uint32_t d_EncTime[6][500];
+
+extern uint32_t TEST_TCNT;
+extern _Bool flag_motor_is_move;
 
 /* USER CODE END TD */
 
@@ -272,7 +278,40 @@ void EXTI9_5_IRQHandler(void)
 void TIM1_UP_TIM10_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
-	TEST_GLB_TIM10_CNT++;
+	for(uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
+	{
+		Motor[i].md_drum_cnt++;
+
+		if(flag_motor_is_move == false) TEST_TCNT++;
+		if(Motor[i].md_st == WORKING)
+		{
+			if(TEST_TCNT > 30)
+			{
+				ContRegulatorValue += 1;
+
+				Motor[i].md_chr_value = ContRegulatorValue;
+				Motor[i].md_chl_value = 0;
+
+				if(Motor[i].md_prch == PAIRCHANNEL_1)
+				{
+					Motor[i].md_htim->Instance->CCR1 = Motor[i].md_chl_value;
+					Motor[i].md_htim->Instance->CCR2 = Motor[i].md_chr_value;
+				}
+				else if(Motor[i].md_prch == PAIRCHANNEL_2)
+				{
+					Motor[i].md_htim->Instance->CCR3 = Motor[i].md_chl_value;
+					Motor[i].md_htim->Instance->CCR4 = Motor[i].md_chr_value;
+				}
+
+				SpeedAngleMas[Motor[0].md_CountDataToRecv] = ContRegulatorValue;
+				Motor[0].md_CountDataToRecv++;
+				TEST_TCNT = 0;
+			}
+			flag_motor_is_move = false;
+		}
+	}
+
+
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   HAL_TIM_IRQHandler(&htim10);
@@ -341,6 +380,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 			{
 				if ((Motor[i].md_st == WAITING) && (GLB_Time[2] >= Motor[i].md_FL2_startWorkTime))
 				{
+					flag_motor_is_move = false;
 					FL_2_Motor_Start(&Motor[i]);
 				}
 				else if (/*(Motor[i].md_st == WORKING) && (GLB_Time[2] < Motor[i].md_FL2_stopWorkTime) &&*/ (Motor[i].md_encod_sn.cnt < (Motor[i].md_FL2_Angle / 1.5)))
@@ -377,9 +417,9 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 //						DRIVER_CTRL_OFF;
 						GLB_TypeCtrl = 0x00;
 						ContRegulatorValue = 0;
-						if((i == 0) && (Motor[0].EnableFeedBack == true))
+						if((i == 0) && (Motor[0].md_EnableFeedBack == true))
 						{
-							CDC_Transmit_FS((uint8_t*)&SpeedAngleMas, Motor[0].md_CountDataToRecv);
+							CDC_Transmit_FS(&SpeedAngleMas, Motor[0].md_CountDataToRecv * 2);	 // 2 because data is uint16_t type
 							Motor[0].md_CountDataToRecv = 0;
 						}
 
