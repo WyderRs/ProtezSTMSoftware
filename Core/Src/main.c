@@ -59,7 +59,7 @@ double d_Velocity[6][500];
 
 double RegVal[1000];
 
-uint16_t SpeedAngleMas[2500];
+uint16_t SpeedAngleMas[5000];
 
 
 uint32_t TEST_TCNT;
@@ -935,7 +935,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		if (HAL_GPIO_ReadPin(Motor[0].md_encod_sn.GPIOsupSens, Motor[0].md_encod_sn.PINsupSens) == GPIO_PIN_SET)
 		{
 			EncTimeNow[0] = Motor[0].md_drum_cnt;
-//			EncCntNow[0] = Motor[0].md_encod_sn.cnt;
+			EncCntNow[0] = Motor[0].md_encod_sn.cnt;
 			if(Motor[0].md_encod_sn.cnt == 0)
 			{
 //				ContRegulatorValue = 50;
@@ -947,7 +947,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 				d_EncTime[0][Motor[0].md_encod_sn.cnt] = (EncTimeNow[0] - EncTimeOld[0]);
 
 				RegVal[Motor[0].md_encod_sn.cnt] = Coef_P * ((((1.0 * Motor[0].md_FL2_Angle) / 1.5) / (Motor[0].md_FL2_Time * 0.01))
-						- (10000.0 / (1.0 * (d_EncTime[0][Motor[0].md_encod_sn.cnt] + TEST_TCNT))));
+						- (10000.0 / (1.0 * (d_EncTime[0][Motor[0].md_encod_sn.cnt] + 0 * TEST_TCNT))));
 
 
 

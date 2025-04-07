@@ -46,7 +46,7 @@ extern uint32_t TEST_cntTim2;
 
 
 
-extern uint16_t SpeedAngleMas[2500];
+extern uint16_t SpeedAngleMas[5000];
 
 extern uint32_t d_EncTime[6][500];
 
@@ -282,10 +282,10 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	{
 		Motor[i].md_drum_cnt++;
 
-		if(flag_motor_is_move == false) TEST_TCNT++;
+		TEST_TCNT++;
 		if(Motor[i].md_st == WORKING)
 		{
-			if(TEST_TCNT > 30)
+			if(TEST_TCNT > 50)
 			{
 				ContRegulatorValue += 1;
 
@@ -306,8 +306,9 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				SpeedAngleMas[Motor[0].md_CountDataToRecv] = ContRegulatorValue;
 				Motor[0].md_CountDataToRecv++;
 				TEST_TCNT = 0;
+				flag_motor_is_move = false;
 			}
-			flag_motor_is_move = false;
+
 		}
 	}
 
@@ -422,6 +423,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 							CDC_Transmit_FS(&SpeedAngleMas, Motor[0].md_CountDataToRecv * 2);	 // 2 because data is uint16_t type
 							Motor[0].md_CountDataToRecv = 0;
 						}
+						flag_motor_is_move = false;
 
 					}
 				}
