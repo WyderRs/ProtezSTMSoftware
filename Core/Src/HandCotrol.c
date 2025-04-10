@@ -30,6 +30,7 @@ FL2_TypeCtrlMove TCM;					// Type control moving motor
 /**************************************************************************************/
 /*PID Regulator*/
 double Coef_P = 0.05;
+double Coef_I = 0.05;
 double Coef_T = 100.0;
 uint16_t ContRegulatorValue;
 uint32_t TEST_GLB_TIM10_CNT1;
@@ -46,7 +47,6 @@ extern uint32_t d_EncCnt[6];
 
 extern double RegVal[1000];
 extern uint32_t d_EncTime[6][500];
-
 
 
 /*Extern definition*/

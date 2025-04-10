@@ -40,8 +40,10 @@ extern EncoderSens Encoder[6];
 extern MotorDefinition Motor[6];
 extern uint32_t glb_dstc;
 extern double Coef_P;
+extern double Coef_I;
 extern double Coef_T;
 extern uint16_t ContRegulatorValue;
+
 
 uint32_t EncCnt[6];
 uint32_t EncCntNow[6];
@@ -151,8 +153,8 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-//  MX_ADC1_Init();
-//  MX_TIM2_Init();
+  MX_ADC1_Init();
+  MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_TIM5_Init();
@@ -170,7 +172,7 @@ int main(void)
 
   HAL_Delay(1000);
 //  PR_TIM11_ON;
-
+  uint8_t dd[3] = {0xFF, 0xFF, 0xFF};
 
   //StartMeasurement();
   /* USER CODE END 2 */
@@ -179,9 +181,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-
-
+	  if(CDC_Transmit_FS(dd, 3))
+	  {
+		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+	  }
 
 
 	 HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
@@ -356,7 +359,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 10000-1;
+  htim1.Init.Prescaler = 1000-1;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim1.Init.Period = 1000-1;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -550,7 +553,7 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 10000-1;
+  htim4.Init.Prescaler = 1000-1;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 1000-1;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -621,7 +624,7 @@ static void MX_TIM5_Init(void)
 
   /* USER CODE END TIM5_Init 1 */
   htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 10000-1;
+  htim5.Init.Prescaler = 1000-1;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim5.Init.Period = 1000-1;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -892,16 +895,16 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(SPI3_CS_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
@@ -947,8 +950,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 				d_EncTime[0][Motor[0].md_encod_sn.cnt] = (EncTimeNow[0] - EncTimeOld[0]);
 
 				RegVal[Motor[0].md_encod_sn.cnt] = Coef_P * ((((1.0 * Motor[0].md_FL2_Angle) / 1.5) / (Motor[0].md_FL2_Time * 0.01))
-						- (10000.0 / (1.0 * (d_EncTime[0][Motor[0].md_encod_sn.cnt] + 0 * TEST_TCNT))));
-
+						- (10000.0 / (1.0 * (d_EncTime[0][Motor[0].md_encod_sn.cnt]))));
+//						+ (RegValOld[Motor[0].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[0].md_encod_sn.cnt]));
 
 
 				int16_t temp = ContRegulatorValue + (int16_t)(RegVal[Motor[0].md_encod_sn.cnt]);
@@ -959,8 +962,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 				SpeedAngleMas[Motor[0].md_CountDataToRecv] = ContRegulatorValue;
 				Motor[0].md_CountDataToRecv++;
-				TEST_TCNT = 0;
-
 			}
 
 
@@ -999,7 +1000,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 					Motor[0].md_htim->Instance->CCR4 = Motor[0].md_chr_value;
 				}
 			}
-			flag_motor_is_move = true;
+		flag_motor_is_move = true;
 		}
 		else if (HAL_GPIO_ReadPin(Motor[0].md_encod_sn.GPIOsupSens, Motor[0].md_encod_sn.PINsupSens) == GPIO_PIN_RESET)
 		{
