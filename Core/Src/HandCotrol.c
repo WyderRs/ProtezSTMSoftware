@@ -58,7 +58,7 @@ extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim10;
-
+extern UART_HandleTypeDef huart6;
 
 
 /*
@@ -277,21 +277,19 @@ RCV_Flags Rcv_ChechFlags(uint8_t *package)
 	uint16_t mask = 0x01;
 	uint16_t allpack = ((package[1] << 8) | package[0]);
 
+	if (allpack & mask) // SidePlate
+	{
+		flags.FL0_SidePlate = true;
+	}
+	mask <<= 1;
 	if (allpack & mask)	// WorkMode byte
 	{
-		// ...
 		flags.FL0_WorkMode = true;
 	}
 	mask <<= 1;
-	if(package[2] == FL_PWM_MODE)
+	if(package[3] == FL_PWM_MODE)
 	{
 		GLB_TypeCtrl = 0x01;
-		if (allpack & mask) // Status byte
-		{
-			flags.FL0_Status = true;
-		}
-		mask <<= 1;
-
 		if (allpack & mask) // SelectMotor byte
 		{
 			flags.FL1_MotorSelect = true;
@@ -331,11 +329,6 @@ RCV_Flags Rcv_ChechFlags(uint8_t *package)
 	else if (package[2] == FL_ANGLE_MODE)
 	{
 		GLB_TypeCtrl = 0x02;
-		if (allpack & mask) // Status byte
-		{
-			flags.FL0_Status = true;
-		}
-		mask <<= 1;
 		if (allpack & mask) // SelectMotor byte
 		{
 			flags.FL1_MotorSelect = true;
@@ -605,8 +598,9 @@ void HandProtezRecvInstruction(uint8_t *package)
 	FlagsRecvInst = Rcv_ChechFlags(package);
 	SubPackNum += 2;
 
-	if(FlagsRecvInst.FL0_WorkMode)
+	if(package[SubPackNum] == FL_CURRENT_PLATE)
 	{
+		SubPackNum++;
 		if(package[SubPackNum] == FL_PWM_MODE)
 		{
 			SubPackNum++;
@@ -638,7 +632,6 @@ void HandProtezRecvInstruction(uint8_t *package)
 			if(FlagsRecvInst.FL1_ADC)
 			{
 				Rcv_FL_1_SetADC(package[SubPackNum], num_motor);
-
 				SubPackNum++;
 			}
 			if(FlagsRecvInst.FL0_StartInsruct)
@@ -691,6 +684,10 @@ void HandProtezRecvInstruction(uint8_t *package)
 				SubPackNum++;
 			}
 		}
+	}
+	else
+	{
+//		HAL_UART_Transmit_IT(&huart6, package, strlen(package));
 	}
 }
 

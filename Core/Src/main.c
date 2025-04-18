@@ -181,14 +181,12 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if(CDC_Transmit_FS(dd, 3))
-	  {
-		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-	  }
+
+	 CDC_Transmit_FS(dd, 3);
 
 
 	 HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-	 HAL_Delay(500);
+	 HAL_Delay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

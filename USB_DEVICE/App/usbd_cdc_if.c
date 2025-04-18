@@ -275,7 +275,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   uint8_t iii = 0;
   for(uint8_t i = 0; i < len; i++)
   {
-	  if(buffer[i] == 0xFF)
+	  if((buffer[i] == 0xFF) && (buffer[i + 1] == 0xDD))
 	  {
 		  for(uint8_t ii = iii; ii < i; ii++)
 		  {

@@ -45,7 +45,10 @@
 #define FL_PWM_MODE		0x01
 #define FL_ANGLE_MODE	0x02
 
+#define FL_INTERN_PLATE	0x00
+#define FL_EXTERN_PLATE	0x01
 
+#define FL_CURRENT_PLATE 0x00	////////////////////////////////////// WARINING!!!!
 
 
 /*
@@ -112,6 +115,7 @@ typedef enum MotorState
 	FINISH,						// Last instruction is finished
 	NONE,
 } MotorState;
+
 
 //typedef struct MotorFlagParam
 //{
@@ -187,7 +191,7 @@ typedef struct RCV_Flags
 {
 	_Bool FL0_WorkMode;
 	_Bool FL0_StartInsruct;
-	_Bool FL0_Status;
+	_Bool FL0_SidePlate;
 
 	_Bool FL1_MotorSelect;
 	_Bool FL1_MotorDir;
@@ -195,6 +199,7 @@ typedef struct RCV_Flags
 	_Bool FL1_TimeWork;
 	_Bool FL1_DelayWork;
 	_Bool FL1_ADC;
+
 
 	_Bool FL2_Angle;
 	_Bool FL2_Time;
