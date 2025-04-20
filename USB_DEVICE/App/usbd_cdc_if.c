@@ -22,7 +22,7 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+#include "stdbool.h"
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,7 +31,7 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+extern _Bool DeviceIsConnected;
 /* USER CODE END PV */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -273,6 +273,15 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 
   uint8_t buffer1[64] = {0, };
   uint8_t iii = 0;
+
+  for(uint8_t i = 0; i < len; i++)
+  {
+	  if((buffer[i] == 0x44) && (buffer[i + 1] == 0x44) && (buffer[i + 2] == 0x44) && (buffer[i + 3] == 0x44))
+	  {
+		  DeviceIsConnected = true;
+	  }
+  }
+
   for(uint8_t i = 0; i < len; i++)
   {
 	  if((buffer[i] == 0xFF) && (buffer[i + 1] == 0xDD))

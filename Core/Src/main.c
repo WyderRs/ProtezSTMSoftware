@@ -66,7 +66,7 @@ uint16_t SpeedAngleMas[5000];
 
 uint32_t TEST_TCNT;
 _Bool flag_motor_is_move = false;
-
+_Bool DeviceIsConnected = false;
 
 
 /* USER CODE END PTD */
@@ -181,8 +181,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-	 CDC_Transmit_FS(dd, 3);
+	  if(!DeviceIsConnected)
+	  {
+		  CDC_Transmit_FS(dd, 3);
+	  }
 
 
 	 HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
@@ -969,36 +971,38 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 //			EncCntOld[0] = EncCntNow[0];
 			Motor[0].md_encod_sn.cnt++;
 
-
-			if(Motor[0].md_st == WORKING)
+			if(Motor[0].TOM == WRM_ANGLE_MODE)
 			{
-				if(ContRegulatorValue < 0)
+				if(Motor[0].md_st == WORKING)
 				{
-					Motor[0].md_chl_value = ContRegulatorValue;
-					Motor[0].md_chr_value = 0;
-				}
-				else if(ContRegulatorValue > 0)
-				{
-					Motor[0].md_chr_value = ContRegulatorValue;
-					Motor[0].md_chl_value = 0;
-				}
-				else if(ContRegulatorValue == 0)
-				{
-					Motor[0].md_chr_value = 1000;
-					Motor[0].md_chl_value = 1000;
-				}
-				if(Motor[0].md_prch == PAIRCHANNEL_1)
-				{
-					Motor[0].md_htim->Instance->CCR1 = Motor[0].md_chl_value;
-					Motor[0].md_htim->Instance->CCR2 = Motor[0].md_chr_value;
-				}
-				else if(Motor[0].md_prch == PAIRCHANNEL_2)
-				{
-					Motor[0].md_htim->Instance->CCR3 = Motor[0].md_chl_value;
-					Motor[0].md_htim->Instance->CCR4 = Motor[0].md_chr_value;
+					if(ContRegulatorValue < 0)
+					{
+						Motor[0].md_chl_value = ContRegulatorValue;
+						Motor[0].md_chr_value = 0;
+					}
+					else if(ContRegulatorValue > 0)
+					{
+						Motor[0].md_chr_value = ContRegulatorValue;
+						Motor[0].md_chl_value = 0;
+					}
+					else if(ContRegulatorValue == 0)
+					{
+						Motor[0].md_chr_value = 1000;
+						Motor[0].md_chl_value = 1000;
+					}
+					if(Motor[0].md_prch == PAIRCHANNEL_1)
+					{
+						Motor[0].md_htim->Instance->CCR1 = Motor[0].md_chl_value;
+						Motor[0].md_htim->Instance->CCR2 = Motor[0].md_chr_value;
+					}
+					else if(Motor[0].md_prch == PAIRCHANNEL_2)
+					{
+						Motor[0].md_htim->Instance->CCR3 = Motor[0].md_chl_value;
+						Motor[0].md_htim->Instance->CCR4 = Motor[0].md_chr_value;
+					}
 				}
 			}
-		flag_motor_is_move = true;
+			flag_motor_is_move = true;
 		}
 		else if (HAL_GPIO_ReadPin(Motor[0].md_encod_sn.GPIOsupSens, Motor[0].md_encod_sn.PINsupSens) == GPIO_PIN_RESET)
 		{

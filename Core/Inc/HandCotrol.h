@@ -115,7 +115,12 @@ typedef enum MotorState
 	FINISH,						// Last instruction is finished
 	NONE,
 } MotorState;
-
+typedef enum TypeOperationMode
+{
+    WRM_None = 0,
+    WRM_PWM_MODE = 0x01,
+    WRM_ANGLE_MODE = 0x02,
+} TypeOperationMode;
 
 //typedef struct MotorFlagParam
 //{
@@ -177,6 +182,8 @@ typedef struct MotorDefinition
 	_Bool md_EnableFeedBack;
 
 	uint32_t md_drum_cnt;			// Drum counter motor
+
+	TypeOperationMode TOM;
 
 //	MotorFlagParam md_ConfigSettingsParam;	// Flags init parameters
 } MotorDefinition;

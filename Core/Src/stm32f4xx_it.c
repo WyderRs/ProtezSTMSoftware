@@ -280,35 +280,38 @@ void TIM1_UP_TIM10_IRQHandler(void)
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
 	for(uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
 	{
-		Motor[i].md_drum_cnt++;
-		TEST_TCNT++;
-		if(Motor[i].md_st == WORKING)
+		if(Motor[i].TOM == WRM_ANGLE_MODE)
 		{
-			if(flag_motor_is_move == false)
+			Motor[i].md_drum_cnt++;
+			TEST_TCNT++;
+			if(Motor[i].md_st == WORKING)
 			{
-				if(TEST_TCNT > 300)
+				if(flag_motor_is_move == false)
 				{
-					ContRegulatorValue += 10;
-					Motor[i].md_chr_value = ContRegulatorValue;
-					Motor[i].md_chl_value = 0;
-
-					if(Motor[i].md_prch == PAIRCHANNEL_1)
+					if(TEST_TCNT > 300)
 					{
-						Motor[i].md_htim->Instance->CCR1 = Motor[i].md_chl_value;
-						Motor[i].md_htim->Instance->CCR2 = Motor[i].md_chr_value;
-					}
-					else if(Motor[i].md_prch == PAIRCHANNEL_2)
-					{
-						Motor[i].md_htim->Instance->CCR3 = Motor[i].md_chl_value;
-						Motor[i].md_htim->Instance->CCR4 = Motor[i].md_chr_value;
-					}
+						ContRegulatorValue += 10;
+						Motor[i].md_chr_value = ContRegulatorValue;
+						Motor[i].md_chl_value = 0;
 
-					SpeedAngleMas[Motor[0].md_CountDataToRecv] = ContRegulatorValue;
-					Motor[0].md_CountDataToRecv++;
-					TEST_TCNT = 0;
+						if(Motor[i].md_prch == PAIRCHANNEL_1)
+						{
+							Motor[i].md_htim->Instance->CCR1 = Motor[i].md_chl_value;
+							Motor[i].md_htim->Instance->CCR2 = Motor[i].md_chr_value;
+						}
+						else if(Motor[i].md_prch == PAIRCHANNEL_2)
+						{
+							Motor[i].md_htim->Instance->CCR3 = Motor[i].md_chl_value;
+							Motor[i].md_htim->Instance->CCR4 = Motor[i].md_chr_value;
+						}
+
+						SpeedAngleMas[Motor[0].md_CountDataToRecv] = ContRegulatorValue;
+						Motor[0].md_CountDataToRecv++;
+						TEST_TCNT = 0;
+					}
 				}
+				flag_motor_is_move = false;
 			}
-			flag_motor_is_move = false;
 		}
 	}
 

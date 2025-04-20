@@ -1,4 +1,4 @@
-../Core/Src/HandCotrol.c:69:17:Motor_Settings	112	static
+../Core/Src/HandCotrol.c:69:17:Motor_Settings	120	static
 ../Core/Src/HandCotrol.c:112:6:FL_1_Motor_SetDuty	24	static
 ../Core/Src/HandCotrol.c:127:6:FL_2_Motor_SetDuty	24	static
 ../Core/Src/HandCotrol.c:142:6:FL_1_Motor_ContinuousDuty	16	static
@@ -34,6 +34,6 @@
 ../Core/Src/HandCotrol.c:723:6:ADC_Timer2_Init	40	static
 ../Core/Src/HandCotrol.c:749:6:ADC_Setchannel	16	static
 ../Core/Src/HandCotrol.c:753:6:PR_ADC_Init	72	dynamic
-../Core/Src/HandCotrol.c:804:6:ProtezInit	112	static
+../Core/Src/HandCotrol.c:804:6:ProtezInit	120	static
 ../Core/Src/HandCotrol.c:862:6:StartMeasurement	8	static
 ../Core/Src/HandCotrol.c:868:6:StopMeasurement	8	static
