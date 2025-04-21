@@ -25,6 +25,11 @@ uint32_t glb_dstc;						// ALL Transmited data			DELETE
 uint32_t Target_dtsc[6];				// Target pack for send to comport
 uint8_t GLB_TypeCtrl;					// Global type control
 FL2_TypeCtrlMove TCM;					// Type control moving motor
+
+uint8_t UsartDataByte;					// Usart byte
+uint8_t UsartData[40];					// Usart Data
+uint32_t UsartDataCnt;					// Usart Data count
+uint32_t UsartDataCnt2;					// Usart Data count sup
 /**************************************************************************************/
 
 /**************************************************************************************/
@@ -59,6 +64,8 @@ extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim10;
 extern UART_HandleTypeDef huart6;
+
+
 
 
 /*
@@ -590,7 +597,7 @@ void FL_2_HandProtezStartInstruction(void)
 
 
 
-void HandProtezRecvInstruction(uint8_t *package)
+void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 {
 	uint8_t SubPackNum = 0;
 	uint8_t num_motor = 0;
@@ -689,7 +696,8 @@ void HandProtezRecvInstruction(uint8_t *package)
 	}
 	else
 	{
-//		HAL_UART_Transmit_IT(&huart6, package, strlen(package));
+		package[count] = count;
+		HAL_UART_Transmit_IT(&huart6, package, count);
 	}
 }
 

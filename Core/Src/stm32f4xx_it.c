@@ -50,7 +50,7 @@ extern uint16_t SpeedAngleMas[5000];
 
 extern uint32_t d_EncTime[6][500];
 
-extern uint32_t TEST_TCNT;
+extern uint32_t LimitCNT;
 extern _Bool flag_motor_is_move;
 
 /* USER CODE END TD */
@@ -283,12 +283,12 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		if(Motor[i].TOM == WRM_ANGLE_MODE)
 		{
 			Motor[i].md_drum_cnt++;
-			TEST_TCNT++;
+			LimitCNT++;
 			if(Motor[i].md_st == WORKING)
 			{
 				if(flag_motor_is_move == false)
 				{
-					if(TEST_TCNT > 300)
+					if(LimitCNT > 300)
 					{
 						ContRegulatorValue += 10;
 						Motor[i].md_chr_value = ContRegulatorValue;
@@ -307,7 +307,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 
 						SpeedAngleMas[Motor[i].md_CountDataToRecv] = ContRegulatorValue;
 						Motor[i].md_CountDataToRecv++;
-						TEST_TCNT = 0;
+						LimitCNT = 0;
 					}
 				}
 				flag_motor_is_move = false;
@@ -391,14 +391,6 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 				{
 //					FL_2_Motor_ContinuousDuty(&Motor[i]);
 
-//					if(Motor[i].md_EnableFeedBack == true)
-//					{
-//						if((Motor[i].md_CountDataToRecv - Motor[i].md_CountDataRecieved) >= 1)
-//						{
-//							CDC_Transmit_FS(SpeedAngleMas[Motor[i].md_CountDataToRecv], 2);
-//							Motor[i].md_CountDataRecieved += 1;
-//						}
-//					}
 				}
 				else if (/*((Motor[i].md_st == WORKING) && (GLB_Time[2] >= Motor[i].md_FL2_stopWorkTime))
 						|| */((Motor[i].md_encod_sn.cnt > (Motor[i].md_FL2_Angle / 1.5)) && ((Motor[i].md_FL2_Angle / 1.5) != 0)))

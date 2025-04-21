@@ -291,7 +291,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 			  buffer1[ii - iii] = buffer[ii];
 		  }
 		  iii = i + 1;
-		  HandProtezRecvInstruction(buffer1);
+		  HandProtezRecvInstruction(buffer1, len);
 	  }
 
   }

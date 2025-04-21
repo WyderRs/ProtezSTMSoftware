@@ -233,7 +233,7 @@ void FL_1_Motor_SetDuty(MotorDefinition *motor, uint32_t duty_l, uint32_t duty_r
 void FL_2_Motor_SetDuty(MotorDefinition *motor, uint32_t duty_l, uint32_t duty_r);
 void FL_1_Motor_SetTimeSettings(MotorDefinition *motor);
 void FL_2_Motor_SetTimeSettings(MotorDefinition *motor);
-void HandProtezRecvInstruction(uint8_t *package);
+void HandProtezRecvInstruction(uint8_t *package, uint32_t count);
 void PR_ADC_Init(uint32_t nomps);
 void ADC_Setchannel(uint8_t cnt, uint32_t trg_channel);
 void StartMeasurement(void);

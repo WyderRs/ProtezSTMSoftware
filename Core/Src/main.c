@@ -44,6 +44,10 @@ extern double Coef_I;
 extern double Coef_T;
 extern uint16_t ContRegulatorValue;
 
+extern uint8_t UsartDataByte;
+extern uint8_t UsartData[40];
+extern uint32_t UsartDataCnt;
+extern uint32_t UsartDataCnt2;
 
 uint32_t EncCnt[6];
 uint32_t EncCntNow[6];
@@ -64,9 +68,11 @@ double RegVal[1000];
 uint16_t SpeedAngleMas[5000];
 
 
-uint32_t TEST_TCNT;
+uint32_t LimitCNT;
 _Bool flag_motor_is_move = false;
 _Bool DeviceIsConnected = false;
+
+
 
 
 /* USER CODE END PTD */
@@ -169,6 +175,8 @@ int main(void)
   PR_TIM10_ON;
   /*Init*/
   ProtezInit();
+
+  HAL_UART_Receive_IT(&huart6, &UsartDataByte, 1);
 
   HAL_Delay(1000);
 //  PR_TIM11_ON;
@@ -1153,6 +1161,25 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 
 }
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if(huart == &huart6)
+	{
+		// Далее переписать в доп протокол между STM
+		// Тип отправить что то, по нему определять что полетит далее данные или команда или еще какая нибудь хрень
+		UsartData[UsartDataCnt2] = UsartDataByte;
+		UsartDataCnt2++;
+		if(UsartData[0] == UsartDataCnt2)
+		{
+//			HandProtezRecvInstruction(UsartData, UsartDataCnt2);
+			memset(UsartData, '\0', UsartDataCnt2);
+			UsartDataCnt2 = 0;
+		}
+	}
+}
+
+
+
 /* USER CODE END 4 */
 
 /**
