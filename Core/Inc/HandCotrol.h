@@ -176,6 +176,7 @@ typedef struct MotorDefinition
 	uint16_t md_FL2_stopWorkTime;			// Tick 0.01s for to stop work
 
 	uint32_t md_CountDataToRecv;
+	uint32_t md_CountDataRecieved;
 
 	double md_FL2_NowAngle;
 

@@ -326,7 +326,7 @@ RCV_Flags Rcv_ChechFlags(uint8_t *package)
 		}
 		mask <<= 1;
 	}
-	else if (package[2] == FL_ANGLE_MODE)
+	else if (package[3] == FL_ANGLE_MODE)
 	{
 		GLB_TypeCtrl = 0x02;
 		if (allpack & mask) // SelectMotor byte
@@ -607,6 +607,7 @@ void HandProtezRecvInstruction(uint8_t *package)
 			if(FlagsRecvInst.FL1_MotorSelect)
 			{
 				num_motor = Rcv_FL_1_SelectMotor(package[SubPackNum]);
+				Motor[num_motor].TOM = FL_PWM_MODE;
 				SubPackNum++;
 			}
 			if(FlagsRecvInst.FL1_MotorDir)
@@ -646,6 +647,7 @@ void HandProtezRecvInstruction(uint8_t *package)
 			if(FlagsRecvInst.FL1_MotorSelect)
 			{
 				num_motor = Rcv_FL_2_SelectMotor(package[SubPackNum]);
+				Motor[num_motor].TOM = FL_ANGLE_MODE;
 				SubPackNum++;
 			}
 			if(FlagsRecvInst.FL1_MotorDir)

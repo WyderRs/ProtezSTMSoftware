@@ -181,6 +181,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  //HAL_PCD_GetConnectionState(&hpcd_USB_OTG_FS) == USB_CONNECTED
+
 	  if(!DeviceIsConnected)
 	  {
 		  CDC_Transmit_FS(dd, 3);

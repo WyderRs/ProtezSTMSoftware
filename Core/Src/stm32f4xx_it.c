@@ -305,8 +305,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 							Motor[i].md_htim->Instance->CCR4 = Motor[i].md_chr_value;
 						}
 
-						SpeedAngleMas[Motor[0].md_CountDataToRecv] = ContRegulatorValue;
-						Motor[0].md_CountDataToRecv++;
+						SpeedAngleMas[Motor[i].md_CountDataToRecv] = ContRegulatorValue;
+						Motor[i].md_CountDataToRecv++;
 						TEST_TCNT = 0;
 					}
 				}
@@ -387,9 +387,18 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 					flag_motor_is_move = false;
 					FL_2_Motor_Start(&Motor[i]);
 				}
-				else if (/*(Motor[i].md_st == WORKING) && (GLB_Time[2] < Motor[i].md_FL2_stopWorkTime) &&*/ (Motor[i].md_encod_sn.cnt < (Motor[i].md_FL2_Angle / 1.5)))
+				else if ((Motor[i].md_st == WORKING) && /*(GLB_Time[2] < Motor[i].md_FL2_stopWorkTime) &&*/ (Motor[i].md_encod_sn.cnt < (Motor[i].md_FL2_Angle / 1.5)))
 				{
 //					FL_2_Motor_ContinuousDuty(&Motor[i]);
+
+//					if(Motor[i].md_EnableFeedBack == true)
+//					{
+//						if((Motor[i].md_CountDataToRecv - Motor[i].md_CountDataRecieved) >= 1)
+//						{
+//							CDC_Transmit_FS(SpeedAngleMas[Motor[i].md_CountDataToRecv], 2);
+//							Motor[i].md_CountDataRecieved += 1;
+//						}
+//					}
 				}
 				else if (/*((Motor[i].md_st == WORKING) && (GLB_Time[2] >= Motor[i].md_FL2_stopWorkTime))
 						|| */((Motor[i].md_encod_sn.cnt > (Motor[i].md_FL2_Angle / 1.5)) && ((Motor[i].md_FL2_Angle / 1.5) != 0)))
