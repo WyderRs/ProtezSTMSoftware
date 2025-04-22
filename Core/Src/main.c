@@ -25,7 +25,7 @@
 #include "HandCotrol.h"
 #include "usbd_cdc_if.h"
 #include "stdbool.h"
-
+#include "stm32f4xx_hal_uart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -70,8 +70,8 @@ uint16_t SpeedAngleMas[5000];
 
 uint32_t LimitCNT;
 _Bool flag_motor_is_move = false;
-_Bool DeviceIsConnected = false;
 
+extern _Bool DeviceIsConnected;
 
 
 
@@ -195,7 +195,6 @@ int main(void)
 	  {
 		  CDC_Transmit_FS(dd, 3);
 	  }
-
 
 	 HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 	 HAL_Delay(100);
@@ -1171,10 +1170,17 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		UsartDataCnt2++;
 		if(UsartData[0] == UsartDataCnt2)
 		{
-//			HandProtezRecvInstruction(UsartData, UsartDataCnt2);
-			memset(UsartData, '\0', UsartDataCnt2);
+
+			char data[50];
+			for(uint8_t i = 0; i < UsartDataCnt2; i++) data[i] = UsartData[i + 1];
+
+			HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, UsartDataCnt2 - 1);
+			HandProtezRecvInstruction((uint8_t*)data, UsartDataCnt2 - 1);
+
+//			memset(UsartData, '\0', UsartDataCnt2);
 			UsartDataCnt2 = 0;
 		}
+		HAL_UART_Receive_IT(&huart6, &UsartDataByte, 1);
 	}
 }
 

@@ -233,6 +233,7 @@ void FL_1_Motor_SetDuty(MotorDefinition *motor, uint32_t duty_l, uint32_t duty_r
 void FL_2_Motor_SetDuty(MotorDefinition *motor, uint32_t duty_l, uint32_t duty_r);
 void FL_1_Motor_SetTimeSettings(MotorDefinition *motor);
 void FL_2_Motor_SetTimeSettings(MotorDefinition *motor);
+void HandProtezRecvInstructionCorrectToReverse(uint8_t *package, uint32_t count);
 void HandProtezRecvInstruction(uint8_t *package, uint32_t count);
 void PR_ADC_Init(uint32_t nomps);
 void ADC_Setchannel(uint8_t cnt, uint32_t trg_channel);
@@ -247,6 +248,7 @@ void FL_2_HandProtezStartInstruction(void);
 MotorState CheckStateAllMotor(void);
 void FL_1_Motor_ContinuousDuty(MotorDefinition *motor);
 void FL_2_Motor_ContinuousDuty(MotorDefinition *motor);
+void HandProtezUSBConnectHandler();
 /*===================================================================*/
 void ADC_Timer2_Init(uint8_t num_ch, uint32_t nomps);
 MotorState CheckStateAllMotor(void);

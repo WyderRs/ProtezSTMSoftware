@@ -30,6 +30,7 @@ uint8_t UsartDataByte;					// Usart byte
 uint8_t UsartData[40];					// Usart Data
 uint32_t UsartDataCnt;					// Usart Data count
 uint32_t UsartDataCnt2;					// Usart Data count sup
+_Bool DeviceIsConnected = false;		// USB Device is connected
 /**************************************************************************************/
 
 /**************************************************************************************/
@@ -421,7 +422,7 @@ void Rcv_FL_1_SetADC(uint8_t byte, uint8_t num_motor)
 	{
 		Motor[num_motor].EnableADC = true;
 		ProtezGlobalConf.ADC_ChannelsEnable = true;	// если хоть один установился
-		NowCountPointADC = 2500;
+		NowCountPointADC = 1250;
 	}
 	else if (!(byte & 0x01))
 	{
@@ -593,8 +594,114 @@ void FL_2_HandProtezStartInstruction(void)
 		}
 	}
 }
+// This fumction meeds for correction settings
+void HandProtezRecvInstructionCorrectToReverse(uint8_t *package, uint32_t count)
+{
+	uint8_t SubPackNum = 0;
+	RCV_Flags FlagsRecvInstTemp = Rcv_ChechFlags(package);
+	SubPackNum += 2;
 
-
+	package[SubPackNum] = FL_CURRENT_PLATE;
+	if(package[SubPackNum] == FL_CURRENT_PLATE)
+	{
+		SubPackNum++;
+		if(package[SubPackNum] == FL_PWM_MODE)
+		{
+			SubPackNum++;
+			if(FlagsRecvInstTemp.FL1_MotorSelect)
+			{
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+			}
+			if(FlagsRecvInstTemp.FL1_MotorDir)
+			{
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+			}
+			if(FlagsRecvInstTemp.FL1_PWM_Set)
+			{
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+			}
+			if(FlagsRecvInstTemp.FL1_TimeWork)
+			{
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+			}
+			if(FlagsRecvInstTemp.FL1_DelayWork)
+			{
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+			}
+			if(FlagsRecvInstTemp.FL1_ADC)
+			{
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+			}
+			if(FlagsRecvInstTemp.FL0_StartInsruct)
+			{
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+			}
+		}
+		else if(package[SubPackNum] == FL_ANGLE_MODE)
+		{
+			SubPackNum++;
+			if(FlagsRecvInstTemp.FL1_MotorSelect)
+			{
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+			}
+			if(FlagsRecvInstTemp.FL1_MotorDir)
+			{
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+			}
+			if(FlagsRecvInstTemp.FL2_Angle)
+			{
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+			}
+			if(FlagsRecvInstTemp.FL2_Time)
+			{
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+			}
+			if(FlagsRecvInstTemp.FL2_Speed)
+			{
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+			}
+			if(FlagsRecvInstTemp.FL2_Delay)
+			{
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+			}
+			if(FlagsRecvInstTemp.FL2_FeedBack)
+			{
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+			}
+			if(FlagsRecvInstTemp.FL0_StartInsruct)
+			{
+//				package[SubPackNum] = ...;
+				SubPackNum++;
+			}
+		}
+	}
+}
 
 
 void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
@@ -696,9 +803,17 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 	}
 	else
 	{
-		package[count] = count;
-		HAL_UART_Transmit_IT(&huart6, package, count);
+		char data[50] = {0, };
+		for(uint8_t i = 0; i < count; i++) data[i + 1] = package[i];
+		data[0] = ++count;
+		HAL_UART_Transmit_IT(&huart6, (uint8_t*)data, count);
 	}
+}
+
+void HandProtezUSBConnectHandler()
+{
+	DeviceIsConnected = true;
+	__HAL_UART_DISABLE_IT(&huart6, UART_IT_RXNE);
 }
 
 MotorState CheckStateAllMotor(void)
