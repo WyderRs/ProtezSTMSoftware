@@ -181,6 +181,7 @@ int main(void)
   HAL_Delay(1000);
 //  PR_TIM11_ON;
   uint8_t dd[3] = {0xFF, 0xFF, 0xFF};
+  uint32_t gintsts = USB_OTG_FS->GINTSTS;
 
   //StartMeasurement();
   /* USER CODE END 2 */
@@ -194,10 +195,42 @@ int main(void)
 	  if(!DeviceIsConnected)
 	  {
 		  CDC_Transmit_FS(dd, 3);
+		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		  HAL_Delay(100);
 	  }
+//		// Проверяем на событие сброса USB
+//		if (gintsts & USB_OTG_GINTSTS_USBRST)
+//		{
+//			MX_USB_DEVICE_Init();
+//		}
+//		// Проверяем на завершение перечисления
+//		if (gintsts & USB_OTG_GINTSTS_ENUMDNE)
+//		{
+//			// Устройство успешно подключено и перечислено
+//			// Здесь можно начать обмен данными
+//		}
+//		// Проверяем на начало кадра
+//		if (gintsts & USB_OTG_GINTSTS_SOF)
+//		{
+//			// Обработка получения кадра начала кадра
+//			// Это может быть полезно для синхронизации
+//
+//		}
+//		// тип устройство подключено
+//		if (gintsts & USB_OTG_GINTSTS_IEPINT)
+//		{
+//			DeviceIsConnected = true;
+//			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+//			HAL_Delay(50);
+//		}
+//		// Сброс флагов (если необходимо)
+//		USB_OTG_FS->GINTSTS = gintsts; // Сбрасываем обработанные флаги
 
-	 HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-	 HAL_Delay(100);
+
+
+	  // USBD_CDC.DISCINT
+	  //USB_OTG_GINTSTS_ENUMDNE
+	  //USB_OTG_GINTSTS_SOF
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -924,6 +957,8 @@ static void MX_GPIO_Init(void)
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc1)
 {
 //	drts = DMA2_Stream0->NDTR;	// ЭТА ШТУКА ГОВОРИТ О КОЛИЧЕСТВЕ ГОТОВЫХ ДАННЫХ ПОД ОТПРАВКУ
+
+	// Сюда добавить условия какая это плата: данные по uart или по usb
 	DMA2_Stream0->NDTR;
 	CDC_Transmit_FS(&ADC_Data[0], drts);
 	dstc += drts;
