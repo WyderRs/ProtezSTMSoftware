@@ -49,6 +49,9 @@ extern uint8_t UsartData[40];
 extern uint32_t UsartDataCnt;
 extern uint32_t UsartDataCnt2;
 
+extern _Bool ThisDeviceOnUsartCtrl;
+extern _Bool ETEMode_Enable;
+
 uint32_t EncCnt[6];
 uint32_t EncCntNow[6];
 uint32_t EncCntOld[6];
@@ -180,7 +183,7 @@ int main(void)
 
   HAL_Delay(1000);
 //  PR_TIM11_ON;
-  uint8_t dd[3] = {0xFF, 0xFF, 0xFF};
+  uint8_t dd[3] = {0xDD, 0xDD, 0xDD};
   uint32_t gintsts = USB_OTG_FS->GINTSTS;
 
   //StartMeasurement();
@@ -959,22 +962,49 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc1)
 //	drts = DMA2_Stream0->NDTR;	// ЭТА ШТУКА ГОВОРИТ О КОЛИЧЕСТВЕ ГОТОВЫХ ДАННЫХ ПОД ОТПРАВКУ
 
 	// Сюда добавить условия какая это плата: данные по uart или по usb
-	DMA2_Stream0->NDTR;
-	CDC_Transmit_FS(&ADC_Data[0], drts);
-	dstc += drts;
-	glb_dstc += drts;
+	if(!ThisDeviceOnUsartCtrl)
+	{
+		DMA2_Stream0->NDTR;
+		CDC_Transmit_FS(&ADC_Data[0], drts);
+		dstc += drts;
+		glb_dstc += drts;
+	}
+	else if(ThisDeviceOnUsartCtrl)
+	{
+		DMA2_Stream0->NDTR;
+		HAL_UART_Transmit_IT(&huart6, &ADC_Data[0], drts);
+		dstc += drts;
+		glb_dstc += drts;
+	}
+	else if(!(ThisDeviceOnUsartCtrl) && (ETEMode_Enable == true))
+	{
+		CDC_Transmit_FS(&ADC_Data[0], drts);
+	}
 }
 
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1)
 {
 //	drts = DMA2_Stream0->NDTR;
-	DMA2_Stream0->NDTR;
-	CDC_Transmit_FS(&ADC_Data[drts], drts);
-	dstc += drts;
-	glb_dstc += drts;
-}
+	if(!ThisDeviceOnUsartCtrl)
+	{
+		DMA2_Stream0->NDTR;
+		CDC_Transmit_FS(&ADC_Data[drts], drts);
+		dstc += drts;
+		glb_dstc += drts;
+	}
+	else if(ThisDeviceOnUsartCtrl)
+	{
+		DMA2_Stream0->NDTR;
+		HAL_UART_Transmit_IT(&huart6, &ADC_Data[drts], drts);
+		dstc += drts;
+		glb_dstc += drts;
+	}
+	else if(!(ThisDeviceOnUsartCtrl) && (ETEMode_Enable == true))
+	{
 
+	}
+}
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if (GPIO_Pin == GPIO_PIN_10)

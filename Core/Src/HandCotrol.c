@@ -30,7 +30,14 @@ uint8_t UsartDataByte;					// Usart byte
 uint8_t UsartData[40];					// Usart Data
 uint32_t UsartDataCnt;					// Usart Data count
 uint32_t UsartDataCnt2;					// Usart Data count sup
+
 _Bool DeviceIsConnected = false;		// USB Device is connected
+_Bool ThisDeviceOnUsartCtrl = false;	// This device on usart control
+//*****************//
+// end-to-end (ETE MODE)
+_Bool ETEMode_Enable = false;
+
+//*****************//
 /**************************************************************************************/
 
 /**************************************************************************************/
@@ -284,15 +291,18 @@ RCV_Flags Rcv_ChechFlags(uint8_t *package)
 	RCV_Flags flags = {0, };
 	uint16_t mask = 0x01;
 	uint16_t allpack = ((package[1] << 8) | package[0]);
-
+	uint16_t i = 0;
+	i +=2;
 	if (allpack & mask) // SidePlate
 	{
 		flags.FL0_SidePlate = true;
+		i++;
 	}
 	mask <<= 1;
 	if (allpack & mask)	// WorkMode byte
 	{
 		flags.FL0_WorkMode = true;
+		i++;
 	}
 	mask <<= 1;
 	if(package[3] == FL_PWM_MODE)
@@ -301,36 +311,44 @@ RCV_Flags Rcv_ChechFlags(uint8_t *package)
 		if (allpack & mask) // SelectMotor byte
 		{
 			flags.FL1_MotorSelect = true;
+			i++;
 		}
 		mask <<= 1;
 		if (allpack & mask) // TypeMoveMotor byte
 		{
 			flags.FL1_MotorDir= true;
+			i++;
 		}
 		mask <<= 1;
 		if (allpack & mask) // PWM byte
 		{
 			flags.FL1_PWM_Set= true;
+			i++;
 		}
 		mask <<= 1;
 		if (allpack & mask) // TimeWork byte
 		{
 			flags.FL1_TimeWork= true;
+			i++;
 		}
 		mask <<= 1;
 		if (allpack & mask) // DelayWork byte
 		{
 			flags.FL1_DelayWork= true;
+			i++;
 		}
 		mask <<= 1;
 		if (allpack & mask) // ADC byte
 		{
 			flags.FL1_ADC = true;
+			if(package[i] == 0x01) ETEMode_Enable = true;				////////////////
+			i++;
 		}
 		mask <<= 1;
 		if (allpack & mask) // Start instruction
 		{
 			flags.FL0_StartInsruct = true;
+			i++;
 		}
 		mask <<= 1;
 	}
@@ -340,41 +358,50 @@ RCV_Flags Rcv_ChechFlags(uint8_t *package)
 		if (allpack & mask) // SelectMotor byte
 		{
 			flags.FL1_MotorSelect = true;
+			i++;
 		}
 		mask <<= 1;
 		if (allpack & mask) // TypeMoveMotor byte
 		{
 			flags.FL1_MotorDir= true;
+			i++;
 		}
 		mask <<= 1;
 		if (allpack & mask) // Angle byte
 		{
 			flags.FL2_Angle= true;
+			i++;
 		}
 		mask <<= 1;
 		if (allpack & mask) // Time byte
 		{
 			flags.FL2_Time = true;
+			i++;
 		}
 		mask <<= 1;
 		if (allpack & mask) // Speed byte
 		{
 			flags.FL2_Speed = true;
+			i++;
 		}
 		mask <<= 1;
 		if (allpack & mask) // Delay byte
 		{
 			flags.FL2_Delay = true;
+			i++;
 		}
 		mask <<= 1;
 		if (allpack & mask) // FeedBack byte
 		{
 			flags.FL2_FeedBack = true;
+			if(package[i] == 0x01) ETEMode_Enable = true;				////////////////
+			i++;
 		}
 		mask <<= 1;
 		if (allpack & mask) // Start instruction
 		{
 			flags.FL0_StartInsruct = true;
+			i++;
 		}
 		mask <<= 1;
 	}
@@ -601,6 +628,7 @@ void HandProtezRecvInstructionCorrectToReverse(uint8_t *package, uint32_t count)
 	RCV_Flags FlagsRecvInstTemp = Rcv_ChechFlags(package);
 	SubPackNum += 2;
 
+	ThisDeviceOnUsartCtrl = true;
 	package[SubPackNum] = FL_CURRENT_PLATE;
 	if(package[SubPackNum] == FL_CURRENT_PLATE)
 	{
@@ -803,6 +831,18 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 	}
 	else
 	{
+		//
+		// ИНИЦИАЛИЗИРУЕМ РЕЖИМ СКВОЗНОЙ ПЕРЕДАЧИ ПО USART
+		// НАДО РЕАЛИЗОВАТЬ: [[STM1][STM2]] С РАЗНЫМИ ПОРЦИЯМИ ОТПРАВЛЯТЬ ПО ОЧЕРЕДИ: STM1-STM2-STM1-STM2...
+		//
+
+		if(ETEMode_Enable == true)
+		{
+
+		}
+
+
+		//
 		char data[50] = {0, };
 		for(uint8_t i = 0; i < count; i++) data[i + 1] = package[i];
 		data[0] = ++count;
@@ -810,9 +850,10 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 	}
 }
 
-void HandProtezUSBConnectHandler()
+void HandProtezUSBConnectHandler(void)
 {
 	DeviceIsConnected = true;
+	ThisDeviceOnUsartCtrl = false;
 	__HAL_UART_DISABLE_IT(&huart6, UART_IT_RXNE);
 }
 
@@ -988,7 +1029,7 @@ void StartMeasurement(void)
 {
 	glb_dstc = 0;
 	PR_TIM2_ON;
-	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)&ADC_Data, 20);
+	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)&ADC_Data, drts);
 }
 void StopMeasurement(void)
 {
