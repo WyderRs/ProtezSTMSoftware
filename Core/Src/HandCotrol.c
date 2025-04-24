@@ -14,7 +14,7 @@ extern volatile uint32_t GLB_Time[3];	// Counter time: [0] - 1s, [1] - 0.1s, [2]
 uint32_t TEST_cntTim2 = 0;				// Test variables (counter TIM2)
 uint8_t ADC_Data[100] = {0, };			// Data received from ADC
 uint32_t ADC_Channels[6] = {0, };		// Number ADC channels
-uint32_t drts = 10; 					// Number data ready to send
+uint32_t drts = 0; 					// Number data ready to send
 uint32_t dstc = 0; 						// Number data sent to COM
 MotorDefinition Motor[6];				// Structure of Motors
 PRGlbDef ProtezGlobalConf;				// Global definitions
@@ -31,6 +31,7 @@ uint8_t UsartData[40];					// Usart Data
 uint32_t UsartDataCnt;					// Usart Data count
 uint32_t UsartDataCnt2;					// Usart Data count sup
 
+_Bool FlagDMA_START = false;			// Start DMA reading
 _Bool DeviceIsConnected = false;		// USB Device is connected
 _Bool ThisDeviceOnUsartCtrl = false;	// This device on usart control
 //*****************//
@@ -897,8 +898,9 @@ void ADC_Timer2_Init(uint8_t num_ch, uint32_t nomps)
 	if ((num_ch == 0) && (num_ch > MAX_ADC_CHANNEL)) num_ch = 1;
 	if ((nomps != 0) && (nomps <= MAX_MESUR_POINT))
 	{
-		htim2.Init.Period = ((((HAL_RCC_GetSysClockFreq() / (htim2.Init.Prescaler + 1)) / (nomps * 2))) / num_ch) - 1;
+		htim2.Init.Period = (((HAL_RCC_GetSysClockFreq() / (htim2.Init.Prescaler + 1)) / (nomps /** num_ch*/))) - 1;
 	}
+	drts = 10 * num_ch;	// 10 bytes * number channels
 
 	htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -964,6 +966,7 @@ void PR_ADC_Init(uint32_t nomps)
 			if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) Error_Handler();
 		}
 	}
+
 	ADC_Timer2_Init(num_ch, nomps);
 }
 
@@ -1038,6 +1041,7 @@ void StopMeasurement(void)
 	PR_TIM2_OFF;
 	HAL_TIM_Base_DeInit(&htim2);
 	dstc = 0;
+	FlagDMA_START = false;
 }
 
 

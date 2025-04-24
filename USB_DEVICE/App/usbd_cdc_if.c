@@ -287,12 +287,15 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   {
 	  if((buffer[i] == 0xFF) && (buffer[i + 1] == 0xDD))
 	  {
+		  uint16_t i_s = 0;
 		  for(uint8_t ii = iii; ii < i; ii++)
 		  {
 			  buffer1[ii - iii] = buffer[ii];
+			  i_s++;
 		  }
-		  iii = i + 1;
-		  HandProtezRecvInstruction(buffer1, len);
+		  HandProtezRecvInstruction(buffer1, i_s);
+		  iii = i + 2;
+
 	  }
 
   }

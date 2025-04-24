@@ -52,6 +52,9 @@ extern uint32_t d_EncTime[6][500];
 
 extern uint32_t LimitCNT;
 extern _Bool flag_motor_is_move;
+extern _Bool FlagDMA_START;
+
+
 
 /* USER CODE END TD */
 
@@ -341,9 +344,10 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 			FL_1_Motor_ContinuousDuty(&Motor[i]);
 			if ((Motor[i].md_st == WAITING) && (GLB_Time[2] >= Motor[i].md_startWorkTime))
 			{
-				if(ProtezGlobalConf.ADC_ChannelsEnable)
+				if((ProtezGlobalConf.ADC_ChannelsEnable) && (!FlagDMA_START))
 				{
 					StartMeasurement();		// If there is enables channel ADC then to run measurement
+					FlagDMA_START = true;
 				}
 				FL_1_Motor_Start(&Motor[i]);
 			}
