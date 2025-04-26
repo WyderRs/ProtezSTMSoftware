@@ -50,7 +50,8 @@
   */
 
 /* USER CODE BEGIN PRIVATE_TYPES */
-
+  uint16_t USB_DATA_counter = 0;
+  uint8_t buffer1[64] = {0, };
 /* USER CODE END PRIVATE_TYPES */
 
 /**
@@ -272,8 +273,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   memset(Buf, '\0', len);   // clear the Buf also
 
 
-  uint8_t buffer1[64] = {0, };
-  uint8_t iii = 0;
+  // 64 БАЙТА - КАК ПРЕДЕЛ, ЕСЛИ БОЛЬШЕ 64 БАЙТ НА ОТПРАВКУ, ТО ОТПРАВИТЬ 64, А ПОТОМ СЛЕДУЮЩИЕ
+
+
 
   for(uint8_t i = 0; i < len; i++)
   {
@@ -283,22 +285,43 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	  }
   }
 
+
   for(uint8_t i = 0; i < len; i++)
   {
-	  if((buffer[i] == 0xFF) && (buffer[i + 1] == 0xDD))
-	  {
-		  uint16_t i_s = 0;
-		  for(uint8_t ii = iii; ii < i; ii++)
-		  {
-			  buffer1[ii - iii] = buffer[ii];
-			  i_s++;
-		  }
-		  HandProtezRecvInstruction(buffer1, i_s);
-		  iii = i + 2;
+	  buffer1[USB_DATA_counter] = buffer[i];
 
+	  if((buffer1[USB_DATA_counter - 1] == 0xFF) && (buffer1[USB_DATA_counter] == 0xDD))
+	  {
+		  HandProtezRecvInstruction(buffer1, USB_DATA_counter - 2);
+		  USB_DATA_counter = 0;
+	  }
+	  else
+	  {
+		  USB_DATA_counter++;
 	  }
 
   }
+
+
+
+//  for(uint8_t i = 0; i < len; i++)
+//  {
+//	  if((buffer[i] == 0xFF) && (buffer[i + 1] == 0xDD))
+//	  {
+//		  uint16_t i_s = 0;
+//		  for(uint8_t ii = iii; ii < i; ii++)
+//		  {
+//			  buffer1[ii - iii] = buffer[ii];
+//			  i_s++;
+//		  }
+//		  HandProtezRecvInstruction(buffer1, i_s);
+//		  iii = i + 2;
+//
+//	  }
+//  }
+
+
+
 
 
   return (USBD_OK);

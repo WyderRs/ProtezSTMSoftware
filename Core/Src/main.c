@@ -195,12 +195,14 @@ int main(void)
   {
 	  //HAL_PCD_GetConnectionState(&hpcd_USB_OTG_FS) == USB_CONNECTED
 
-	  if(!DeviceIsConnected)
-	  {
-		  CDC_Transmit_FS(dd, 3);
-		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-		  HAL_Delay(100);
-	  }
+//	  if(!DeviceIsConnected)
+//	  {
+//		  CDC_Transmit_FS(dd, 3);
+//		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+//		  HAL_Delay(100);
+//	  }
+
+
 //		// Проверяем на событие сброса USB
 //		if (gintsts & USB_OTG_GINTSTS_USBRST)
 //		{

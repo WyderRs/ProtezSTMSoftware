@@ -1043,7 +1043,3 @@ void StopMeasurement(void)
 	dstc = 0;
 	FlagDMA_START = false;
 }
-
-
-
-
