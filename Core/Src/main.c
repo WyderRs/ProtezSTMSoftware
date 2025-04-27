@@ -77,7 +77,6 @@ _Bool flag_motor_is_move = false;
 extern _Bool DeviceIsConnected;
 
 
-
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -162,8 +161,8 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_ADC1_Init();
-  MX_TIM2_Init();
+//  MX_ADC1_Init();
+//  MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_TIM5_Init();
@@ -195,6 +194,7 @@ int main(void)
   {
 	  //HAL_PCD_GetConnectionState(&hpcd_USB_OTG_FS) == USB_CONNECTED
 
+
 //	  if(!DeviceIsConnected)
 //	  {
 //		  CDC_Transmit_FS(dd, 3);
@@ -202,6 +202,19 @@ int main(void)
 //		  HAL_Delay(100);
 //	  }
 
+
+
+//	  USBD_StatusTypeDef USBD_LL_DevConnected(USBD_HandleTypeDef  *pdev)
+//	  USBD_StatusTypeDef USBD_LL_DevDisconnected(USBD_HandleTypeDef  *pdev)
+//	  tatic void USBH_USR_DeviceAttached ( void *ph )
+//	  static void USBH_USR_DeviceDisconnected ( void *ph )
+
+//	  if(!DeviceIsConnected)
+//	  {
+//		  CDC_Transmit_FS(dd, 3);
+//		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+//		  HAL_Delay(50);
+//	  }
 
 //		// Проверяем на событие сброса USB
 //		if (gintsts & USB_OTG_GINTSTS_USBRST)
@@ -970,6 +983,8 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc1)
 		CDC_Transmit_FS(&ADC_Data[0], drts);
 		dstc += drts;
 		glb_dstc += drts;
+
+
 	}
 	else if(ThisDeviceOnUsartCtrl)
 	{
@@ -988,12 +1003,14 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc1)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1)
 {
 //	drts = DMA2_Stream0->NDTR;
+
 	if(!ThisDeviceOnUsartCtrl)
 	{
 		DMA2_Stream0->NDTR;
 		CDC_Transmit_FS(&ADC_Data[drts], drts);
 		dstc += drts;
 		glb_dstc += drts;
+
 	}
 	else if(ThisDeviceOnUsartCtrl)
 	{

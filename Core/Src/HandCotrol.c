@@ -12,10 +12,12 @@
 /*Global variables*/
 extern volatile uint32_t GLB_Time[3];	// Counter time: [0] - 1s, [1] - 0.1s, [2] - 0.01s
 uint32_t TEST_cntTim2 = 0;				// Test variables (counter TIM2)
-uint8_t ADC_Data[100] = {0, };			// Data received from ADC
+uint8_t ADC_Data[500] = {0, };			// Data received from ADC
+//uint8_t ADC_DataSent[5000] = {0, };			// ALL Data of sent
 uint32_t ADC_Channels[6] = {0, };		// Number ADC channels
-uint32_t drts = 0; 					// Number data ready to send
+uint32_t drts = 0; 						// Number data ready to send
 uint32_t dstc = 0; 						// Number data sent to COM
+uint32_t num_pack = 20; 				// Number data to send to 1 tick
 MotorDefinition Motor[6];				// Structure of Motors
 PRGlbDef ProtezGlobalConf;				// Global definitions
 EncoderSens Encoder[6];					// Encoder sensors parameters
@@ -898,9 +900,10 @@ void ADC_Timer2_Init(uint8_t num_ch, uint32_t nomps)
 	if ((num_ch == 0) && (num_ch > MAX_ADC_CHANNEL)) num_ch = 1;
 	if ((nomps != 0) && (nomps <= MAX_MESUR_POINT))
 	{
-		htim2.Init.Period = (((HAL_RCC_GetSysClockFreq() / (htim2.Init.Prescaler + 1)) / (nomps /** num_ch*/))) - 1;
+		htim2.Init.Period = (((HAL_RCC_GetSysClockFreq() / (htim2.Init.Prescaler + 1)) / (nomps /** num_pack*/))) - 1;
 	}
-	drts = 10 * num_ch;	// 10 bytes * number channels
+
+	drts = num_pack * num_ch;	// 10 bytes * number channels
 
 	htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -956,14 +959,16 @@ void PR_ADC_Init(uint32_t nomps)
 		Error_Handler();
 	}
 	/*------------------*/
+	uint8_t rank = 1;
 	for(uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
 	{
 		if(MotorFlags[i])
 		{
 			sConfig.Channel = ADC_Channels[i];
-			sConfig.Rank = i + 1;
+			sConfig.Rank = rank;
 			sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
 			if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) Error_Handler();
+			rank++;
 		}
 	}
 
@@ -1036,6 +1041,7 @@ void StartMeasurement(void)
 }
 void StopMeasurement(void)
 {
+	HAL_ADC_Stop(&hadc1);
 	HAL_ADC_Stop_DMA(&hadc1);
 	HAL_ADC_DeInit(&hadc1);
 	PR_TIM2_OFF;
