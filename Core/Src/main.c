@@ -48,6 +48,7 @@ extern uint8_t UsartDataByte;
 extern uint8_t UsartData[40];
 extern uint32_t UsartDataCnt;
 extern uint32_t UsartDataCnt2;
+extern _Bool UART_CommandRecieved;
 
 extern _Bool ThisDeviceOnUsartCtrl;
 extern _Bool ETEMode_Enable;
@@ -75,7 +76,6 @@ uint32_t LimitCNT;
 _Bool flag_motor_is_move = false;
 
 extern _Bool DeviceIsConnected;
-
 
 /* USER CODE END PTD */
 
@@ -180,10 +180,13 @@ int main(void)
 
   HAL_UART_Receive_IT(&huart6, &UsartDataByte, 1);
 
+
+
+
   HAL_Delay(1000);
 //  PR_TIM11_ON;
   uint8_t dd[3] = {0xDD, 0xDD, 0xDD};
-  uint32_t gintsts = USB_OTG_FS->GINTSTS;
+//  uint32_t gintsts = USB_OTG_FS->GINTSTS;
 
   //StartMeasurement();
   /* USER CODE END 2 */
@@ -192,6 +195,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
+
 	  //HAL_PCD_GetConnectionState(&hpcd_USB_OTG_FS) == USB_CONNECTED
 
 
@@ -843,7 +848,7 @@ static void MX_USART6_UART_Init(void)
 
   /* USER CODE END USART6_Init 1 */
   huart6.Instance = USART6;
-  huart6.Init.BaudRate = 115200;
+  huart6.Init.BaudRate = 1000000;
   huart6.Init.WordLength = UART_WORDLENGTH_8B;
   huart6.Init.StopBits = UART_STOPBITS_1;
   huart6.Init.Parity = UART_PARITY_NONE;
@@ -1250,11 +1255,15 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	{
 		// Далее переписать в доп протокол между STM
 		// Тип отправить что то, по нему определять что полетит далее данные или команда или еще какая нибудь хрень
+
+
+
 		UsartData[UsartDataCnt2] = UsartDataByte;
 		UsartDataCnt2++;
+
+
 		if(UsartData[0] == UsartDataCnt2)
 		{
-
 			char data[50];
 			for(uint8_t i = 0; i < UsartDataCnt2; i++) data[i] = UsartData[i + 1];
 
@@ -1263,10 +1272,52 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 //			memset(UsartData, '\0', UsartDataCnt2);
 			UsartDataCnt2 = 0;
+			UsartData[0] = 0;
+			UART_CommandRecieved = false;
 		}
-		HAL_UART_Receive_IT(&huart6, &UsartDataByte, 1);
+
+
+		HAL_UART_Receive_IT(&huart6, (uint8_t*)&UsartDataByte, 1);
 	}
 }
+
+
+
+
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+//	if(huart->ErrorCode == HAL_UART_ERROR_NONE)		//	Ошибка не произошла
+//	{
+//		uint8_t o = 0;
+//	}
+//	if(huart->ErrorCode == HAL_UART_ERROR_PE) 	//	Ошибка при проверке четности
+//	{
+//		uint8_t o = 0;
+//	}
+	if(huart->ErrorCode == HAL_UART_ERROR_NE)	//	Ошибка вследствие зашумления
+	{
+		HAL_UART_Receive_IT(huart, (uint8_t*)UsartDataByte, 1);
+	}
+	else if(huart->ErrorCode == HAL_UART_ERROR_FE)	//	Ошибка кадрирования данных
+	{
+		uint8_t o = 0;
+	}
+	else if(huart->ErrorCode == HAL_UART_ERROR_ORE)	//	Ошибка вследствие переполнения
+	{
+		HAL_UART_Receive_IT(huart, (uint8_t*)UsartDataByte, 1);
+	}
+//	else if(huart->ErrorCode == HAL_UART_ERROR_DMA)	//	Ошибка передачи посредством DMA
+//	{
+//		uint8_t o = 0;
+//	}
+}
+
+
+//HAL_UART_AbortReceiveCpltCallback(UART_HandleTypeDef *huart)
+//{
+//	uint8_t o = 0;
+//}
 
 
 

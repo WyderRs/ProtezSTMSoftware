@@ -32,6 +32,7 @@ uint8_t UsartDataByte;					// Usart byte
 uint8_t UsartData[40];					// Usart Data
 uint32_t UsartDataCnt;					// Usart Data count
 uint32_t UsartDataCnt2;					// Usart Data count sup
+_Bool UART_CommandRecieved = false;
 
 _Bool FlagDMA_START = false;			// Start DMA reading
 _Bool DeviceIsConnected = false;		// USB Device is connected
@@ -849,7 +850,7 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 		char data[50] = {0, };
 		for(uint8_t i = 0; i < count; i++) data[i + 1] = package[i];
 		data[0] = ++count;
-		HAL_UART_Transmit_IT(&huart6, (uint8_t*)data, count);
+		HAL_UART_Transmit_IT(&huart6, (uint8_t*)&data, count);
 	}
 }
 
