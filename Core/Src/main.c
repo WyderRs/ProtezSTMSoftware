@@ -44,10 +44,9 @@ extern double Coef_I;
 extern double Coef_T;
 extern uint16_t ContRegulatorValue;
 
-extern uint8_t UsartDataByte;
+extern uint8_t UsartDataByte[30];
 extern uint8_t UsartData[40];
 extern uint32_t UsartDataCnt;
-extern uint32_t UsartDataCnt2;
 extern _Bool UART_CommandRecieved;
 
 extern _Bool ThisDeviceOnUsartCtrl;
@@ -103,6 +102,7 @@ TIM_HandleTypeDef htim10;
 TIM_HandleTypeDef htim11;
 
 UART_HandleTypeDef huart6;
+DMA_HandleTypeDef hdma_usart6_rx;
 
 /* USER CODE BEGIN PV */
 
@@ -178,8 +178,8 @@ int main(void)
   /*Init*/
   ProtezInit();
 
-  HAL_UART_Receive_IT(&huart6, &UsartDataByte, 1);
-
+//  HAL_UART_Receive_IT(&huart6, &UsartDataByte, 6);
+  HAL_UART_Receive_DMA(&huart6, (uint8_t*)&UsartDataByte, 2);
 
 
 
@@ -878,6 +878,9 @@ static void MX_DMA_Init(void)
   /* DMA2_Stream0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+  /* DMA2_Stream1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
 
 }
 
@@ -988,8 +991,6 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc1)
 		CDC_Transmit_FS(&ADC_Data[0], drts);
 		dstc += drts;
 		glb_dstc += drts;
-
-
 	}
 	else if(ThisDeviceOnUsartCtrl)
 	{
@@ -1029,6 +1030,81 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1)
 
 	}
 }
+
+void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart)
+{
+	if(huart->Instance == USART6)
+	{
+		UsartData[UsartDataCnt] = UsartDataByte[0];
+		UsartDataCnt++;
+
+		if(UsartData[0] == UsartDataCnt)
+		{
+			char data[50];
+			for(uint8_t i = 0; i < UsartDataCnt; i++) data[i] = UsartData[i + 1];
+
+			HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, UsartDataCnt - 1);
+			HandProtezRecvInstruction((uint8_t*)data, UsartDataCnt - 1);
+
+			memset(UsartData, '\0', UsartDataCnt);
+			UsartDataCnt = 0;
+			UART_CommandRecieved = false;
+		}
+	}
+}
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+
+	if(huart->Instance == USART6)
+	{
+		UsartData[UsartDataCnt] = UsartDataByte[1];
+		UsartDataCnt++;
+
+		if(UsartData[0] == UsartDataCnt)
+		{
+			char data[50];
+			for(uint8_t i = 0; i < UsartDataCnt; i++) data[i] = UsartData[i + 1];
+
+			HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, UsartDataCnt - 1);
+			HandProtezRecvInstruction((uint8_t*)data, UsartDataCnt - 1);
+
+			memset(UsartData, '\0', UsartDataCnt);
+			UsartDataCnt = 0;
+			UART_CommandRecieved = false;
+		}
+
+	}
+
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+//	if(huart->ErrorCode == HAL_UART_ERROR_NONE)		//	Ошибка не произошла
+//	{
+//		uint8_t o = 0;
+//	}
+//	if(huart->ErrorCode == HAL_UART_ERROR_PE) 	//	Ошибка при проверке четности
+//	{
+//		uint8_t o = 0;
+//	}
+	if(huart->ErrorCode == HAL_UART_ERROR_NE)	//	Ошибка вследствие зашумления
+	{
+
+	}
+	else if(huart->ErrorCode == HAL_UART_ERROR_FE)	//	Ошибка кадрирования данных
+	{
+		uint8_t o = 0;
+	}
+	else if(huart->ErrorCode == HAL_UART_ERROR_ORE)	//	Ошибка вследствие переполнения
+	{
+
+	}
+//	else if(huart->ErrorCode == HAL_UART_ERROR_DMA)	//	Ошибка передачи посредством DMA
+//	{
+//		uint8_t o = 0;
+//	}
+}
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if (GPIO_Pin == GPIO_PIN_10)
@@ -1249,69 +1325,40 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 
 }
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-	if(huart == &huart6)
-	{
-		// Далее переписать в доп протокол между STM
-		// Тип отправить что то, по нему определять что полетит далее данные или команда или еще какая нибудь хрень
-
-
-
-		UsartData[UsartDataCnt2] = UsartDataByte;
-		UsartDataCnt2++;
-
-
-		if(UsartData[0] == UsartDataCnt2)
-		{
-			char data[50];
-			for(uint8_t i = 0; i < UsartDataCnt2; i++) data[i] = UsartData[i + 1];
-
-			HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, UsartDataCnt2 - 1);
-			HandProtezRecvInstruction((uint8_t*)data, UsartDataCnt2 - 1);
-
-//			memset(UsartData, '\0', UsartDataCnt2);
-			UsartDataCnt2 = 0;
-			UsartData[0] = 0;
-			UART_CommandRecieved = false;
-		}
-
-
-		HAL_UART_Receive_IT(&huart6, (uint8_t*)&UsartDataByte, 1);
-	}
-}
-
-
-
-
-
-void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
-{
-//	if(huart->ErrorCode == HAL_UART_ERROR_NONE)		//	Ошибка не произошла
+//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+//{
+//	if(huart == &huart6)
 //	{
-//		uint8_t o = 0;
+//		// Далее переписать в доп протокол между STM
+//		// Тип отправить что то, по нему определять что полетит далее данные или команда или еще какая нибудь хрень
+//
+//
+//
+//		UsartData[UsartDataCnt2] = UsartDataByte;
+//		UsartDataCnt2++;
+//
+//
+//		if(UsartData[0] == UsartDataCnt2)
+//		{
+//			char data[50];
+//			for(uint8_t i = 0; i < UsartDataCnt2; i++) data[i] = UsartData[i + 1];
+//
+//			HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, UsartDataCnt2 - 1);
+//			HandProtezRecvInstruction((uint8_t*)data, UsartDataCnt2 - 1);
+//
+////			memset(UsartData, '\0', UsartDataCnt2);
+//			UsartDataCnt2 = 0;
+//			UsartData[0] = 0;
+//			UART_CommandRecieved = false;
+//		}
+//
+//
+//		HAL_UART_Receive_IT(&huart6, (uint8_t*)&UsartDataByte, 1);
 //	}
-//	if(huart->ErrorCode == HAL_UART_ERROR_PE) 	//	Ошибка при проверке четности
-//	{
-//		uint8_t o = 0;
-//	}
-	if(huart->ErrorCode == HAL_UART_ERROR_NE)	//	Ошибка вследствие зашумления
-	{
-		HAL_UART_Receive_IT(huart, (uint8_t*)UsartDataByte, 1);
-	}
-	else if(huart->ErrorCode == HAL_UART_ERROR_FE)	//	Ошибка кадрирования данных
-	{
-		uint8_t o = 0;
-	}
-	else if(huart->ErrorCode == HAL_UART_ERROR_ORE)	//	Ошибка вследствие переполнения
-	{
-		HAL_UART_Receive_IT(huart, (uint8_t*)UsartDataByte, 1);
-	}
-//	else if(huart->ErrorCode == HAL_UART_ERROR_DMA)	//	Ошибка передачи посредством DMA
-//	{
-//		uint8_t o = 0;
-//	}
-}
+//}
+
+
+
 
 
 //HAL_UART_AbortReceiveCpltCallback(UART_HandleTypeDef *huart)

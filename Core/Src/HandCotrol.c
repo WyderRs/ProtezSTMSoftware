@@ -28,10 +28,9 @@ uint32_t Target_dtsc[6];				// Target pack for send to comport
 uint8_t GLB_TypeCtrl;					// Global type control
 FL2_TypeCtrlMove TCM;					// Type control moving motor
 
-uint8_t UsartDataByte;					// Usart byte
+uint8_t UsartDataByte[30];					// Usart byte
 uint8_t UsartData[40];					// Usart Data
 uint32_t UsartDataCnt;					// Usart Data count
-uint32_t UsartDataCnt2;					// Usart Data count sup
 _Bool UART_CommandRecieved = false;
 
 _Bool FlagDMA_START = false;			// Start DMA reading

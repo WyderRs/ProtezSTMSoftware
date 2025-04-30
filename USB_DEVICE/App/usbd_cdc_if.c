@@ -292,7 +292,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 
 	  if((buffer1[USB_DATA_counter - 1] == 0xFF) && (buffer1[USB_DATA_counter] == 0xDD))
 	  {
-		  HandProtezRecvInstruction(buffer1, USB_DATA_counter - 2);
+		  HandProtezRecvInstruction(buffer1, USB_DATA_counter - 1);
 		  USB_DATA_counter = 0;
 	  }
 	  else
