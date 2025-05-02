@@ -19,6 +19,7 @@ uint32_t drts = 0; 						// Number data ready to send
 uint32_t dstc = 0; 						// Number data sent to COM
 uint32_t num_pack = 20; 				// Number data to send to 1 tick
 MotorDefinition Motor[6];				// Structure of Motors
+MotorDefinition MotorOther[6];			// Structure of External Motors (other plate)
 PRGlbDef ProtezGlobalConf;				// Global definitions
 EncoderSens Encoder[6];					// Encoder sensors parameters
 RCV_Flags FlagsRecvInst;				// Flags of received instruction
@@ -29,16 +30,17 @@ uint8_t GLB_TypeCtrl;					// Global type control
 FL2_TypeCtrlMove TCM;					// Type control moving motor
 
 uint8_t UsartDataByte[30];					// Usart byte
-uint8_t UsartData[40];					// Usart Data
+uint8_t UsartData[120];					// Usart Data
 uint32_t UsartDataCnt;					// Usart Data count
 _Bool UART_CommandRecieved = false;
 
 _Bool FlagDMA_START = false;			// Start DMA reading
 _Bool DeviceIsConnected = false;		// USB Device is connected
-_Bool ThisDeviceOnUsartCtrl = false;	// This device on usart control
+_Bool ThisDeviceOnUsartCtrl = true;	// This device on usart control
 //*****************//
 // end-to-end (ETE MODE)
 _Bool ETEMode_Enable = false;
+uint8_t UART_CountADC_Channel;
 
 //*****************//
 /**************************************************************************************/
@@ -295,13 +297,14 @@ RCV_Flags Rcv_ChechFlags(uint8_t *package)
 	uint16_t mask = 0x01;
 	uint16_t allpack = ((package[1] << 8) | package[0]);
 	uint16_t i = 0;
-	i +=2;
+	i += 2;
 	if (allpack & mask) // SidePlate
 	{
 		flags.FL0_SidePlate = true;
 		i++;
 	}
 	mask <<= 1;
+	if(package[i - 1] == FL_CURRENT_PLATE)
 	if (allpack & mask)	// WorkMode byte
 	{
 		flags.FL0_WorkMode = true;
@@ -344,7 +347,6 @@ RCV_Flags Rcv_ChechFlags(uint8_t *package)
 		if (allpack & mask) // ADC byte
 		{
 			flags.FL1_ADC = true;
-			if(package[i] == 0x01) ETEMode_Enable = true;				////////////////
 			i++;
 		}
 		mask <<= 1;
@@ -397,7 +399,7 @@ RCV_Flags Rcv_ChechFlags(uint8_t *package)
 		if (allpack & mask) // FeedBack byte
 		{
 			flags.FL2_FeedBack = true;
-			if(package[i] == 0x01) ETEMode_Enable = true;				////////////////
+//			if(package[i] == 0x01) ETEMode_Enable = true;				////////////////
 			i++;
 		}
 		mask <<= 1;
@@ -478,6 +480,7 @@ void FL_1_HandProtezStartInstruction(void)
 	{
 		PR_ADC_Init(NowCountPointADC);
 	}
+	else ProtezGlobalConf.md_countMotorADCEnable[0] = 0;
 	for(uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
 	{
 		if(Motor[i].md_st == CONFIGURATED)
@@ -742,7 +745,7 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 	MotorMoveState dir = FREE;
 	FlagsRecvInst = Rcv_ChechFlags(package);
 	SubPackNum += 2;
-
+	/*--------------------------CURRENT PLATE--------------------------*/
 	if(package[SubPackNum] == FL_CURRENT_PLATE)
 	{
 		SubPackNum++;
@@ -838,18 +841,174 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 		// ИНИЦИАЛИЗИРУЕМ РЕЖИМ СКВОЗНОЙ ПЕРЕДАЧИ ПО USART
 		// НАДО РЕАЛИЗОВАТЬ: [[STM1][STM2]] С РАЗНЫМИ ПОРЦИЯМИ ОТПРАВЛЯТЬ ПО ОЧЕРЕДИ: STM1-STM2-STM1-STM2...
 		//
+//		if(ETEMode_Enable == true)
+//		{
+//
+//		}
 
-		if(ETEMode_Enable == true)
+		/*--------------------------OTHER PLATE--------------------------*/
+		SubPackNum++;
+		if(package[SubPackNum] == FL_PWM_MODE)
 		{
+			SubPackNum++;
+			if(FlagsRecvInst.FL1_MotorSelect)
+			{
+				num_motor = package[SubPackNum];
+				MotorOther[num_motor].TOM = FL_PWM_MODE;
 
+				SubPackNum++;
+			}
+			if(FlagsRecvInst.FL1_MotorDir)
+			{
+				dir = package[SubPackNum];
+				MotorOther[num_motor].md_rotsd = dir;
+				MotorOther[num_motor].md_stParam.dir_cnf = true;
+
+				SubPackNum++;
+			}
+			if(FlagsRecvInst.FL1_PWM_Set)
+			{
+				/* Not set PWM value */
+				MotorOther[num_motor].md_stParam.pwm_cnfg = true;
+
+				SubPackNum++;
+			}
+			if(FlagsRecvInst.FL1_TimeWork)
+			{
+				uint16_t halfword = (package[SubPackNum + 1] << 8) | (package[SubPackNum]);
+				MotorOther[num_motor].md_workTime = halfword;
+				if(halfword != 0) MotorOther[num_motor].md_stParam.timeWork_cnfg = true;
+
+				SubPackNum += 2;
+			}
+			if(FlagsRecvInst.FL1_DelayWork)
+			{
+				uint16_t halfword = (package[SubPackNum + 1] << 8) | (package[SubPackNum]);
+				MotorOther[num_motor].md_delayTime = halfword;
+				if(halfword != 0) MotorOther[num_motor].md_stParam.delay_cnfg = true;
+
+				SubPackNum += 2;
+			}
+			if(FlagsRecvInst.FL1_ADC)
+			{
+				uint8_t adc_st = package[SubPackNum];
+				if(adc_st & 0x01)
+				{
+					MotorOther[num_motor].EnableADC = true;
+				}
+				else if (!(adc_st & 0x01))
+				{
+					MotorOther[num_motor].EnableADC = false;
+				}
+				SubPackNum++;
+			}
+			if(FlagsRecvInst.FL0_StartInsruct)
+			{
+				if(package[SubPackNum] & 0x01) {}
+
+				uint8_t num_ch = 0;
+				_Bool MotorFlags[ProtezGlobalConf.NumMotorConfigured];
+				for(uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
+				{
+					if(MotorOther[i].EnableADC)
+					{
+						MotorFlags[i] = true;
+						num_ch++;
+						ProtezGlobalConf.ADC_ChannelsEnable = true;
+					}
+					else
+					{
+						MotorFlags[i] = false;
+					}
+				}
+				ProtezGlobalConf.md_countMotorADCEnable[1] = num_ch;
+				SubPackNum++;
+			}
+		}
+		else if(package[SubPackNum] == FL_ANGLE_MODE)
+		{
+			SubPackNum++;
+			if(FlagsRecvInst.FL1_MotorSelect)
+			{
+				num_motor = package[SubPackNum];
+				MotorOther[num_motor].TOM = FL_ANGLE_MODE;
+				SubPackNum++;
+			}
+			if(FlagsRecvInst.FL1_MotorDir)
+			{
+				dir = package[SubPackNum];
+				MotorOther[num_motor].md_rotsd = dir;
+				MotorOther[num_motor].md_stParam.dir_cnf = true;
+
+				SubPackNum++;
+			}
+			if(FlagsRecvInst.FL2_Angle)
+			{
+				uint16_t halfword = (package[SubPackNum + 1] << 8) | (package[SubPackNum]);
+				MotorOther[num_motor].md_FL2_Angle = halfword;
+				if(halfword != 0)
+				{
+					MotorOther[num_motor].md_stParam.fl2_angle = true;
+				}
+
+				SubPackNum += 2;
+			}
+			if(FlagsRecvInst.FL2_Time)
+			{
+				uint16_t halfword = (package[SubPackNum + 1] << 8) | (package[SubPackNum]);
+				MotorOther[num_motor].md_FL2_Time = halfword;
+				if(halfword != 0)
+				{
+					MotorOther[num_motor].md_stParam.fl2_time = true;
+				}
+				SubPackNum += 2;
+			}
+			if(FlagsRecvInst.FL2_Speed)
+			{
+				uint16_t halfword = (package[SubPackNum + 1] << 8) | (package[SubPackNum]);
+				MotorOther[num_motor].md_FL2_Speed = halfword;
+				if(halfword != 0)
+				{
+					MotorOther[num_motor].md_stParam.fl2_speed = true;
+				}
+
+				SubPackNum += 2;
+			}
+			if(FlagsRecvInst.FL2_Delay)
+			{
+				uint16_t halfword = (package[SubPackNum + 1] << 8) | (package[SubPackNum]);
+				MotorOther[num_motor].md_FL2_Delay = halfword;
+				if(halfword != 0)
+				{
+					MotorOther[num_motor].md_stParam.fl2_delay = true;
+				}
+
+				SubPackNum += 2;
+			}
+			if(FlagsRecvInst.FL2_FeedBack)
+			{
+				uint8_t feedback_st = package[SubPackNum];
+				if(feedback_st & 0x01)
+				{
+					MotorOther[num_motor].md_EnableFeedBack = true;
+				}
+				else if (!(feedback_st & 0x01))
+				{
+					MotorOther[num_motor].md_EnableFeedBack = false;
+				}
+				SubPackNum++;
+			}
+			if(FlagsRecvInst.FL0_StartInsruct)
+			{
+				SubPackNum++;
+			}
 		}
 
 
-		//
-		char data[50] = {0, };
-		for(uint8_t i = 0; i < count; i++) data[i + 1] = package[i];
-		data[0] = ++count;
-		HAL_UART_Transmit_IT(&huart6, (uint8_t*)&data, count);
+		uint8_t FullCom[200] = {0, };
+		for(uint8_t i = 0; i < count; i++) FullCom[i + 1] = package[i];
+		FullCom[0] = ++count;
+		HAL_UART_Transmit_IT(&huart6, (uint8_t*)&FullCom, count);
 	}
 }
 
@@ -903,7 +1062,7 @@ void ADC_Timer2_Init(uint8_t num_ch, uint32_t nomps)
 		htim2.Init.Period = (((HAL_RCC_GetSysClockFreq() / (htim2.Init.Prescaler + 1)) / (nomps /** num_pack*/))) - 1;
 	}
 
-	drts = num_pack * num_ch;	// 10 bytes * number channels
+	drts = num_pack * num_ch;	// 20 bytes * number channels
 
 	htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -938,6 +1097,7 @@ void PR_ADC_Init(uint32_t nomps)
 			MotorFlags[i] = false;
 		}
 	}
+	ProtezGlobalConf.md_countMotorADCEnable[0] = num_ch;
 
 
 	/*Initialization ADC*/

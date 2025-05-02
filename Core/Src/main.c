@@ -43,9 +43,10 @@ extern double Coef_P;
 extern double Coef_I;
 extern double Coef_T;
 extern uint16_t ContRegulatorValue;
+extern PRGlbDef ProtezGlobalConf;
 
 extern uint8_t UsartDataByte[30];
-extern uint8_t UsartData[40];
+extern uint8_t UsartData[120];
 extern uint32_t UsartDataCnt;
 extern _Bool UART_CommandRecieved;
 
@@ -75,6 +76,7 @@ uint32_t LimitCNT;
 _Bool flag_motor_is_move = false;
 
 extern _Bool DeviceIsConnected;
+extern uint32_t num_pack;
 
 /* USER CODE END PTD */
 
@@ -103,6 +105,7 @@ TIM_HandleTypeDef htim11;
 
 UART_HandleTypeDef huart6;
 DMA_HandleTypeDef hdma_usart6_rx;
+DMA_HandleTypeDef hdma_usart6_tx;
 
 /* USER CODE BEGIN PV */
 
@@ -161,8 +164,8 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-//  MX_ADC1_Init();
-//  MX_TIM2_Init();
+  MX_ADC1_Init();
+  MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_TIM5_Init();
@@ -881,6 +884,9 @@ static void MX_DMA_Init(void)
   /* DMA2_Stream1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
+  /* DMA2_Stream6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
 
 }
 
@@ -1038,17 +1044,30 @@ void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart)
 		UsartData[UsartDataCnt] = UsartDataByte[0];
 		UsartDataCnt++;
 
-		if(UsartData[0] == UsartDataCnt)
+		if(ThisDeviceOnUsartCtrl)
 		{
-			char data[50];
-			for(uint8_t i = 0; i < UsartDataCnt; i++) data[i] = UsartData[i + 1];
+			if(UsartData[0] == UsartDataCnt)
+			{
+				char data[50];
+				for(uint8_t i = 0; i < UsartDataCnt; i++) data[i] = UsartData[i + 1];
 
-			HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, UsartDataCnt - 1);
-			HandProtezRecvInstruction((uint8_t*)data, UsartDataCnt - 1);
+				HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, UsartDataCnt - 1);
+				HandProtezRecvInstruction((uint8_t*)&data, UsartDataCnt - 1);
 
-			memset(UsartData, '\0', UsartDataCnt);
-			UsartDataCnt = 0;
-			UART_CommandRecieved = false;
+				memset(UsartData, '\0', 40);
+				memset(UsartDataByte, '\0', 2);
+				UsartDataCnt = 0;
+				UART_CommandRecieved = false;
+			}
+		}
+		else if(!ThisDeviceOnUsartCtrl)
+		{
+
+			if(UsartDataCnt >= num_pack * ProtezGlobalConf.md_countMotorADCEnable[1])
+			{
+//				UsartDataCnt = 0;
+//				ADC_Data[drts + (drts / 2)] = UsartData[UsartDataCnt];
+			}
 		}
 	}
 }
@@ -1059,20 +1078,31 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	{
 		UsartData[UsartDataCnt] = UsartDataByte[1];
 		UsartDataCnt++;
-
-		if(UsartData[0] == UsartDataCnt)
+		if(ThisDeviceOnUsartCtrl)
 		{
-			char data[50];
-			for(uint8_t i = 0; i < UsartDataCnt; i++) data[i] = UsartData[i + 1];
+			if(UsartData[0] == UsartDataCnt)
+			{
+				char data[50];
+				for(uint8_t i = 0; i < UsartDataCnt; i++) data[i] = UsartData[i + 1];
 
-			HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, UsartDataCnt - 1);
-			HandProtezRecvInstruction((uint8_t*)data, UsartDataCnt - 1);
+				HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, UsartDataCnt - 1);
+				HandProtezRecvInstruction((uint8_t*)&data, UsartDataCnt - 1);
 
-			memset(UsartData, '\0', UsartDataCnt);
-			UsartDataCnt = 0;
-			UART_CommandRecieved = false;
+				memset(UsartData, '\0', 40);
+				memset(UsartDataByte, '\0', 2);
+				UsartDataCnt = 0;
+				UART_CommandRecieved = false;
+			}
 		}
+		else if(!ThisDeviceOnUsartCtrl)
+		{
 
+			if(UsartDataCnt >= num_pack * ProtezGlobalConf.md_countMotorADCEnable[1])
+			{
+				UsartDataCnt = 0;
+//				ADC_Data[drts + (drts / 2)] = UsartData[UsartDataCnt];
+			} // num_pack * ProtezGlobalConf.md_countMotorADCEnable[0]
+		}
 	}
 
 }
@@ -1093,7 +1123,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 	}
 	else if(huart->ErrorCode == HAL_UART_ERROR_FE)	//	Ошибка кадрирования данных
 	{
-		uint8_t o = 0;
+
 	}
 	else if(huart->ErrorCode == HAL_UART_ERROR_ORE)	//	Ошибка вследствие переполнения
 	{

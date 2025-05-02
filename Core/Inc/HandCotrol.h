@@ -186,6 +186,8 @@ typedef struct MotorDefinition
 
 	TypeOperationMode TOM;
 
+
+
 //	MotorFlagParam md_ConfigSettingsParam;	// Flags init parameters
 } MotorDefinition;
 typedef struct PRGlbDef
@@ -193,6 +195,8 @@ typedef struct PRGlbDef
 	uint8_t NumMotorConfigured;
 	_Bool ADC_ChannelsEnable;
 	_Bool FeedBack;
+
+	uint8_t md_countMotorADCEnable[2];
 } PRGlbDef;
 
 typedef struct RCV_Flags
