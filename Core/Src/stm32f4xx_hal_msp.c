@@ -195,6 +195,8 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
     /* Peripheral clock enable */
     __HAL_RCC_TIM1_CLK_ENABLE();
     /* TIM1 interrupt Init */
+    HAL_NVIC_SetPriority(TIM1_BRK_TIM9_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM1_BRK_TIM9_IRQn);
     HAL_NVIC_SetPriority(TIM1_UP_TIM10_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
     HAL_NVIC_SetPriority(TIM1_TRG_COM_TIM11_IRQn, 0, 0);
@@ -257,6 +259,9 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
   /* USER CODE END TIM9_MspInit 0 */
     /* Peripheral clock enable */
     __HAL_RCC_TIM9_CLK_ENABLE();
+    /* TIM9 interrupt Init */
+    HAL_NVIC_SetPriority(TIM1_BRK_TIM9_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM1_BRK_TIM9_IRQn);
   /* USER CODE BEGIN TIM9_MspInit 1 */
 
   /* USER CODE END TIM9_MspInit 1 */
@@ -405,6 +410,14 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
     __HAL_RCC_TIM1_CLK_DISABLE();
 
     /* TIM1 interrupt DeInit */
+  /* USER CODE BEGIN TIM1:TIM1_BRK_TIM9_IRQn disable */
+    /**
+    * Uncomment the line below to disable the "TIM1_BRK_TIM9_IRQn" interrupt
+    * Be aware, disabling shared interrupt may affect other IPs
+    */
+    /* HAL_NVIC_DisableIRQ(TIM1_BRK_TIM9_IRQn); */
+  /* USER CODE END TIM1:TIM1_BRK_TIM9_IRQn disable */
+
   /* USER CODE BEGIN TIM1:TIM1_UP_TIM10_IRQn disable */
     /**
     * Uncomment the line below to disable the "TIM1_UP_TIM10_IRQn" interrupt
@@ -479,6 +492,16 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
   /* USER CODE END TIM9_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_TIM9_CLK_DISABLE();
+
+    /* TIM9 interrupt DeInit */
+  /* USER CODE BEGIN TIM9:TIM1_BRK_TIM9_IRQn disable */
+    /**
+    * Uncomment the line below to disable the "TIM1_BRK_TIM9_IRQn" interrupt
+    * Be aware, disabling shared interrupt may affect other IPs
+    */
+    /* HAL_NVIC_DisableIRQ(TIM1_BRK_TIM9_IRQn); */
+  /* USER CODE END TIM9:TIM1_BRK_TIM9_IRQn disable */
+
   /* USER CODE BEGIN TIM9_MspDeInit 1 */
 
   /* USER CODE END TIM9_MspDeInit 1 */
@@ -552,8 +575,8 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
     */
     GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
     GPIO_InitStruct.Alternate = GPIO_AF8_USART6;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
@@ -584,7 +607,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
     hdma_usart6_tx.Init.MemInc = DMA_MINC_ENABLE;
     hdma_usart6_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
     hdma_usart6_tx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-    hdma_usart6_tx.Init.Mode = DMA_CIRCULAR;
+    hdma_usart6_tx.Init.Mode = DMA_NORMAL;
     hdma_usart6_tx.Init.Priority = DMA_PRIORITY_LOW;
     hdma_usart6_tx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     if (HAL_DMA_Init(&hdma_usart6_tx) != HAL_OK)

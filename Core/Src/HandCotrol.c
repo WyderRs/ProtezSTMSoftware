@@ -16,6 +16,7 @@ uint8_t ADC_Data[500] = {0, };			// Data received from ADC
 //uint8_t ADC_DataSent[5000] = {0, };			// ALL Data of sent
 uint32_t ADC_Channels[6] = {0, };		// Number ADC channels
 uint32_t drts = 0; 						// Number data ready to send
+uint32_t drts_2 = 0; 						// Number data ready to send from other plate
 uint32_t dstc = 0; 						// Number data sent to COM
 uint32_t num_pack = 20; 				// Number data to send to 1 tick
 MotorDefinition Motor[6];				// Structure of Motors
@@ -41,6 +42,11 @@ _Bool ThisDeviceOnUsartCtrl = true;	// This device on usart control
 // end-to-end (ETE MODE)
 _Bool ETEMode_Enable = false;
 uint8_t UART_CountADC_Channel;
+
+_Bool TransmitDataFlags[2];
+
+
+
 
 //*****************//
 /**************************************************************************************/
@@ -77,7 +83,7 @@ extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim10;
 extern UART_HandleTypeDef huart6;
-
+extern TIM_HandleTypeDef htim9;
 
 
 
@@ -922,6 +928,7 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 					}
 				}
 				ProtezGlobalConf.md_countMotorADCEnable[1] = num_ch;
+				drts_2 = num_pack * num_ch;
 				SubPackNum++;
 			}
 		}
@@ -1008,7 +1015,9 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 		uint8_t FullCom[200] = {0, };
 		for(uint8_t i = 0; i < count; i++) FullCom[i + 1] = package[i];
 		FullCom[0] = ++count;
-		HAL_UART_Transmit_IT(&huart6, (uint8_t*)&FullCom, count);
+//		HAL_UART_Transmit_IT(&huart6, (uint8_t*)&FullCom, FullCom[0]);
+		HAL_UART_Transmit_DMA(&huart6, (uint8_t*)&FullCom, FullCom[0]);
+
 	}
 }
 
@@ -1207,5 +1216,6 @@ void StopMeasurement(void)
 	PR_TIM2_OFF;
 	HAL_TIM_Base_DeInit(&htim2);
 	dstc = 0;
+	drts = 0;
 	FlagDMA_START = false;
 }

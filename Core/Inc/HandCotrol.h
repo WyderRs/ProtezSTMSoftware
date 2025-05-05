@@ -27,6 +27,8 @@
 #define PR_TIM2_OFF HAL_TIM_Base_Stop_IT(&htim2)
 #define PR_TIM10_ON HAL_TIM_Base_Start_IT(&htim10)
 #define PR_TIM10_OFF HAL_TIM_Base_Stop_IT(&htim10)
+#define PR_TIM9_ON	HAL_TIM_Base_Start_IT(&htim9)
+#define PR_TIM9_OFF	HAL_TIM_Base_Stop_IT(&htim9)
 
 
 #define SUP_ENC_GPIO_1	GPIOB

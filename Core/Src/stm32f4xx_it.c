@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "HandCotrol.h"
 #include <stdbool.h>
+#include "usbd_cdc_if.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,6 +56,17 @@ extern _Bool flag_motor_is_move;
 extern _Bool FlagDMA_START;
 
 
+extern _Bool TransmitDataFlags[2];
+extern _Bool ThisDeviceOnUsartCtrl;
+extern uint32_t drts;
+extern uint32_t dstc;
+extern uint32_t drts_2;
+
+extern uint8_t UsartData[120];
+
+
+uint32_t testdata[5000];
+uint32_t temp2;
 
 /* USER CODE END TD */
 
@@ -88,6 +100,7 @@ extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 extern DMA_HandleTypeDef hdma_adc1;
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim9;
 extern TIM_HandleTypeDef htim10;
 extern TIM_HandleTypeDef htim11;
 extern DMA_HandleTypeDef hdma_usart6_rx;
@@ -278,6 +291,70 @@ void EXTI9_5_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles TIM1 break interrupt and TIM9 global interrupt.
+  */
+void TIM1_BRK_TIM9_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM1_BRK_TIM9_IRQn 0 */
+
+	if(!ThisDeviceOnUsartCtrl)
+	{
+		if(TransmitDataFlags[0] || TransmitDataFlags[1])
+		{
+			uint32_t temp = 0;
+			if(TransmitDataFlags[1])
+			{
+				for(uint8_t i = 0; i < drts_2 * 2; i++)
+				{
+					ADC_Data[drts * 2 + i] = UsartData[i];
+					testdata[temp2] = UsartData[i];
+					temp2++;
+					temp++;
+				}
+				TransmitDataFlags[1] = false;
+			}
+
+			DMA2_Stream0->NDTR;
+			CDC_Transmit_FS(&ADC_Data[0], drts * 2 + temp);
+			dstc += drts * 2;
+			glb_dstc += drts * 2;
+
+
+			TransmitDataFlags[0] = false;
+
+
+//			uint32_t Target_dtsc_temp = 0;
+//			for(uint8_t ii = 0; ii < ProtezGlobalConf.NumMotorConfigured; ii++) Target_dtsc_temp += Target_dtsc[ii];
+//			if(((Target_dtsc_temp - glb_dstc) > 0) && ((Target_dtsc_temp - glb_dstc) <Target_dtsc_temp))	// Device not undelivered data
+//			{
+//				if((glb_dstc % drts) > 0)
+//				{
+//					// ЗДЕСЬ НАДО БЫ ДЕЛИТЬ НА КОЛИЧЕСТВО ВКЛ АЦП (У МЕНЯ ПОКА 1)
+//					count_last_bytes = DMA2_Stream0->NDTR - drts;
+//					CDC_Transmit_FS(&ADC_Data[drts], count_last_bytes);
+//				}
+//				else
+//				{
+//					count_last_bytes = Target_dtsc_temp - glb_dstc;
+//					CDC_Transmit_FS(&ADC_Data[0], count_last_bytes);
+//					glb_dstc += count_last_bytes;
+//				}
+//			}
+		}
+	}
+
+
+
+
+  /* USER CODE END TIM1_BRK_TIM9_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim1);
+  HAL_TIM_IRQHandler(&htim9);
+  /* USER CODE BEGIN TIM1_BRK_TIM9_IRQn 1 */
+
+  /* USER CODE END TIM1_BRK_TIM9_IRQn 1 */
+}
+
+/**
   * @brief This function handles TIM1 update interrupt and TIM10 global interrupt.
   */
 void TIM1_UP_TIM10_IRQHandler(void)
@@ -359,24 +436,26 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 				FL_1_Motor_Stop(&Motor[i]);
 				if(CheckStateAllMotor() == FINISH)
 				{
-					for(uint8_t ii = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
+//					for(uint8_t ii = 0; ii < ProtezGlobalConf.NumMotorConfigured; ii++)
+//					{
+					uint32_t Target_dtsc_temp = 0;
+					for(uint8_t ii = 0; ii < ProtezGlobalConf.NumMotorConfigured; ii++) Target_dtsc_temp += Target_dtsc[ii];
+					if(((Target_dtsc_temp - glb_dstc) > 0) && ((Target_dtsc_temp - glb_dstc) <Target_dtsc_temp))	// Device not undelivered data
 					{
-						if(((Target_dtsc[ii] - glb_dstc) > 0) && ((Target_dtsc[ii] - glb_dstc) < Target_dtsc[ii]))	// Device not undelivered data
+						if((glb_dstc % drts) > 0)
 						{
-							if((glb_dstc % drts) > 0)
-							{
-								// ЗДЕСЬ НАДО БЫ ДЕЛИТЬ НА КОЛИЧЕСТВО ВКЛ АЦП (У МЕНЯ ПОКА 1)
-								count_last_bytes = DMA2_Stream0->NDTR - drts;
-								CDC_Transmit_FS(&ADC_Data[drts], count_last_bytes);
-							}
-							else
-							{
-								count_last_bytes = Target_dtsc[ii] - glb_dstc;
-								CDC_Transmit_FS(&ADC_Data[0], count_last_bytes);
-								glb_dstc += count_last_bytes;
-							}
+							// ЗДЕСЬ НАДО БЫ ДЕЛИТЬ НА КОЛИЧЕСТВО ВКЛ АЦП (У МЕНЯ ПОКА 1)
+							count_last_bytes = DMA2_Stream0->NDTR - drts;
+							CDC_Transmit_FS(&ADC_Data[drts], count_last_bytes);
+						}
+						else
+						{
+							count_last_bytes = Target_dtsc_temp - glb_dstc;
+							CDC_Transmit_FS(&ADC_Data[0], count_last_bytes);
+							glb_dstc += count_last_bytes;
 						}
 					}
+//					}
 					StopMeasurement();
 					ProtezGlobalConf.ADC_ChannelsEnable = false;
 					DRIVER_CTRL_OFF;

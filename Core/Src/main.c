@@ -78,6 +78,11 @@ _Bool flag_motor_is_move = false;
 extern _Bool DeviceIsConnected;
 extern uint32_t num_pack;
 
+extern _Bool TransmitDataFlags[2];
+
+
+uint32_t UsartDataCnt22 = 0;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -184,6 +189,8 @@ int main(void)
 //  HAL_UART_Receive_IT(&huart6, &UsartDataByte, 6);
   HAL_UART_Receive_DMA(&huart6, (uint8_t*)&UsartDataByte, 2);
 
+
+  PR_TIM9_ON;
 
 
   HAL_Delay(1000);
@@ -753,9 +760,9 @@ static void MX_TIM9_Init(void)
 
   /* USER CODE END TIM9_Init 1 */
   htim9.Instance = TIM9;
-  htim9.Init.Prescaler = 0;
+  htim9.Init.Prescaler = 60-1;
   htim9.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim9.Init.Period = 65535;
+  htim9.Init.Period = 10-1;
   htim9.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim9.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim9) != HAL_OK)
@@ -851,7 +858,7 @@ static void MX_USART6_UART_Init(void)
 
   /* USER CODE END USART6_Init 1 */
   huart6.Instance = USART6;
-  huart6.Init.BaudRate = 1000000;
+  huart6.Init.BaudRate = 200000;
   huart6.Init.WordLength = UART_WORDLENGTH_8B;
   huart6.Init.StopBits = UART_STOPBITS_1;
   huart6.Init.Parity = UART_PARITY_NONE;
@@ -991,24 +998,26 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc1)
 //	drts = DMA2_Stream0->NDTR;	// ЭТА ШТУКА ГОВОРИТ О КОЛИЧЕСТВЕ ГОТОВЫХ ДАННЫХ ПОД ОТПРАВКУ
 
 	// Сюда добавить условия какая это плата: данные по uart или по usb
-	if(!ThisDeviceOnUsartCtrl)
-	{
-		DMA2_Stream0->NDTR;
-		CDC_Transmit_FS(&ADC_Data[0], drts);
-		dstc += drts;
-		glb_dstc += drts;
-	}
-	else if(ThisDeviceOnUsartCtrl)
-	{
-		DMA2_Stream0->NDTR;
-		HAL_UART_Transmit_IT(&huart6, &ADC_Data[0], drts);
-		dstc += drts;
-		glb_dstc += drts;
-	}
-	else if(!(ThisDeviceOnUsartCtrl) && (ETEMode_Enable == true))
-	{
-		CDC_Transmit_FS(&ADC_Data[0], drts);
-	}
+//	if(!ThisDeviceOnUsartCtrl)
+//	{
+////		DMA2_Stream0->NDTR;
+////		CDC_Transmit_FS(&ADC_Data[0], drts);
+////		dstc += drts;
+////		glb_dstc += drts;
+//
+////		TransmitDataFlags[0] = true;
+//	}
+//	else if(ThisDeviceOnUsartCtrl)
+//	{
+//		DMA2_Stream0->NDTR;
+//		HAL_UART_Transmit_IT(&huart6, &ADC_Data[0], drts);
+//		dstc += drts;
+//		glb_dstc += drts;
+//	}
+//	else if(!(ThisDeviceOnUsartCtrl) && (ETEMode_Enable == true))
+//	{
+//		CDC_Transmit_FS(&ADC_Data[0], drts);
+//	}
 }
 
 
@@ -1018,18 +1027,21 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1)
 
 	if(!ThisDeviceOnUsartCtrl)
 	{
-		DMA2_Stream0->NDTR;
-		CDC_Transmit_FS(&ADC_Data[drts], drts);
-		dstc += drts;
-		glb_dstc += drts;
+//		DMA2_Stream0->NDTR;
+//		CDC_Transmit_FS(&ADC_Data[drts], drts);
+//		dstc += drts;
+//		glb_dstc += drts;
+
+		TransmitDataFlags[0] = true;
 
 	}
 	else if(ThisDeviceOnUsartCtrl)
 	{
 		DMA2_Stream0->NDTR;
-		HAL_UART_Transmit_IT(&huart6, &ADC_Data[drts], drts);
-		dstc += drts;
-		glb_dstc += drts;
+		HAL_UART_Transmit_IT(&huart6, &ADC_Data[0], drts * 2);
+//		HAL_UART_Transmit_DMA(&huart6, (uint8_t*)&ADC_Data[0], drts * 2);
+		dstc += drts * 2;
+		glb_dstc += drts * 2;
 	}
 	else if(!(ThisDeviceOnUsartCtrl) && (ETEMode_Enable == true))
 	{
@@ -1043,12 +1055,13 @@ void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart)
 	{
 		UsartData[UsartDataCnt] = UsartDataByte[0];
 		UsartDataCnt++;
+//		UsartDataCnt22++;
 
 		if(ThisDeviceOnUsartCtrl)
 		{
-			if(UsartData[0] == UsartDataCnt)
+			if(UsartData[0] <= UsartDataCnt)
 			{
-				char data[50];
+				uint8_t data[50] = {0, };
 				for(uint8_t i = 0; i < UsartDataCnt; i++) data[i] = UsartData[i + 1];
 
 				HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, UsartDataCnt - 1);
@@ -1062,11 +1075,11 @@ void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart)
 		}
 		else if(!ThisDeviceOnUsartCtrl)
 		{
-
-			if(UsartDataCnt >= num_pack * ProtezGlobalConf.md_countMotorADCEnable[1])
+//
+			if(UsartDataCnt >= 2 * num_pack * ProtezGlobalConf.md_countMotorADCEnable[1])
 			{
-//				UsartDataCnt = 0;
-//				ADC_Data[drts + (drts / 2)] = UsartData[UsartDataCnt];
+				UsartDataCnt = 0;
+				TransmitDataFlags[1] = true;
 			}
 		}
 	}
@@ -1078,11 +1091,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	{
 		UsartData[UsartDataCnt] = UsartDataByte[1];
 		UsartDataCnt++;
+//		UsartDataCnt22++;
 		if(ThisDeviceOnUsartCtrl)
 		{
-			if(UsartData[0] == UsartDataCnt)
+			if(UsartData[0] <= UsartDataCnt)
 			{
-				char data[50];
+				uint8_t data[50] = {0, };
 				for(uint8_t i = 0; i < UsartDataCnt; i++) data[i] = UsartData[i + 1];
 
 				HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, UsartDataCnt - 1);
@@ -1096,12 +1110,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		}
 		else if(!ThisDeviceOnUsartCtrl)
 		{
-
-			if(UsartDataCnt >= num_pack * ProtezGlobalConf.md_countMotorADCEnable[1])
+//
+			if(UsartDataCnt >= 2 * num_pack * ProtezGlobalConf.md_countMotorADCEnable[1])
 			{
 				UsartDataCnt = 0;
-//				ADC_Data[drts + (drts / 2)] = UsartData[UsartDataCnt];
-			} // num_pack * ProtezGlobalConf.md_countMotorADCEnable[0]
+				TransmitDataFlags[1] = true;
+			}
 		}
 	}
 
@@ -1113,10 +1127,10 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 //	{
 //		uint8_t o = 0;
 //	}
-//	if(huart->ErrorCode == HAL_UART_ERROR_PE) 	//	Ошибка при проверке четности
-//	{
-//		uint8_t o = 0;
-//	}
+	if(huart->ErrorCode == HAL_UART_ERROR_PE) 	//	Ошибка при проверке четности
+	{
+
+	}
 	if(huart->ErrorCode == HAL_UART_ERROR_NE)	//	Ошибка вследствие зашумления
 	{
 
@@ -1129,10 +1143,10 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 	{
 
 	}
-//	else if(huart->ErrorCode == HAL_UART_ERROR_DMA)	//	Ошибка передачи посредством DMA
-//	{
-//		uint8_t o = 0;
-//	}
+	else if(huart->ErrorCode == HAL_UART_ERROR_DMA)	//	Ошибка передачи посредством DMA
+	{
+
+	}
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
