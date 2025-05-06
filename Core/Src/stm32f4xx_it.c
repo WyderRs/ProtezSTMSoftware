@@ -64,10 +64,6 @@ extern uint32_t drts_2;
 
 extern uint8_t UsartData[120];
 
-
-uint32_t testdata[5000];
-uint32_t temp2;
-
 /* USER CODE END TD */
 
 /* Private define ------------------------------------------------------------*/
@@ -307,8 +303,6 @@ void TIM1_BRK_TIM9_IRQHandler(void)
 				for(uint8_t i = 0; i < drts_2 * 2; i++)
 				{
 					ADC_Data[drts * 2 + i] = UsartData[i];
-					testdata[temp2] = UsartData[i];
-					temp2++;
 					temp++;
 				}
 				TransmitDataFlags[1] = false;

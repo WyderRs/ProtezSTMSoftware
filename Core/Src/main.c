@@ -1056,20 +1056,21 @@ void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart)
 		UsartData[UsartDataCnt] = UsartDataByte[0];
 		UsartDataCnt++;
 //		UsartDataCnt22++;
-
 		if(ThisDeviceOnUsartCtrl)
 		{
 			if(UsartData[0] <= UsartDataCnt)
 			{
 				uint8_t data[50] = {0, };
-				for(uint8_t i = 0; i < UsartDataCnt; i++) data[i] = UsartData[i + 1];
-
-				HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, UsartDataCnt - 1);
-				HandProtezRecvInstruction((uint8_t*)&data, UsartDataCnt - 1);
+				uint8_t temp = 0;
+				temp = UsartDataCnt;
+				UsartDataCnt = 0;
+				for(uint8_t i = 0; i < temp; i++) data[i] = UsartData[i + 1];
+				HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, temp - 1);
+				HandProtezRecvInstruction((uint8_t*)&data, temp - 1);
 
 				memset(UsartData, '\0', 40);
 				memset(UsartDataByte, '\0', 2);
-				UsartDataCnt = 0;
+//				UsartDataCnt = 0;
 				UART_CommandRecieved = false;
 			}
 		}
@@ -1097,14 +1098,16 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			if(UsartData[0] <= UsartDataCnt)
 			{
 				uint8_t data[50] = {0, };
-				for(uint8_t i = 0; i < UsartDataCnt; i++) data[i] = UsartData[i + 1];
-
-				HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, UsartDataCnt - 1);
-				HandProtezRecvInstruction((uint8_t*)&data, UsartDataCnt - 1);
+				uint8_t temp = 0;
+				temp = UsartDataCnt;
+				UsartDataCnt = 0;
+				for(uint8_t i = 0; i < temp; i++) data[i] = UsartData[i + 1];
+				HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, temp - 1);
+				HandProtezRecvInstruction((uint8_t*)&data, temp - 1);
 
 				memset(UsartData, '\0', 40);
 				memset(UsartDataByte, '\0', 2);
-				UsartDataCnt = 0;
+//				UsartDataCnt = 0;
 				UART_CommandRecieved = false;
 			}
 		}
@@ -1118,7 +1121,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			}
 		}
 	}
-
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)

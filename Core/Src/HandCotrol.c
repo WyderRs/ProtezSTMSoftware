@@ -310,7 +310,6 @@ RCV_Flags Rcv_ChechFlags(uint8_t *package)
 		i++;
 	}
 	mask <<= 1;
-	if(package[i - 1] == FL_CURRENT_PLATE)
 	if (allpack & mask)	// WorkMode byte
 	{
 		flags.FL0_WorkMode = true;
@@ -1012,12 +1011,12 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 		}
 
 
-		uint8_t FullCom[200] = {0, };
+		uint8_t FullCom[100] = {0, };
 		for(uint8_t i = 0; i < count; i++) FullCom[i + 1] = package[i];
 		FullCom[0] = ++count;
-//		HAL_UART_Transmit_IT(&huart6, (uint8_t*)&FullCom, FullCom[0]);
-		HAL_UART_Transmit_DMA(&huart6, (uint8_t*)&FullCom, FullCom[0]);
-
+//		HAL_UART_Transmit_IT(&huart6, (uint8_t*)FullCom, FullCom[0]);
+		HAL_UART_Transmit_DMA(&huart6, (uint8_t*)FullCom, FullCom[0]);
+		for(uint32_t w = 0; w < 100000; w++) {}		// Надо избавиться
 	}
 }
 
