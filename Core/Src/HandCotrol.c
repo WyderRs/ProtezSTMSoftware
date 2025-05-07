@@ -37,7 +37,7 @@ _Bool UART_CommandRecieved = false;
 
 _Bool FlagDMA_START = false;			// Start DMA reading
 _Bool DeviceIsConnected = false;		// USB Device is connected
-_Bool ThisDeviceOnUsartCtrl = true;	// This device on usart control
+_Bool ThisDeviceOnUsartCtrl = true;		// This device on usart control
 //*****************//
 // end-to-end (ETE MODE)
 _Bool ETEMode_Enable = false;
@@ -56,7 +56,7 @@ _Bool TransmitDataFlags[2];
 double Coef_P = 0.05;
 double Coef_I = 0.05;
 double Coef_T = 100.0;
-uint16_t ContRegulatorValue;
+uint16_t RegularValuePWM_PID[6];
 uint32_t TEST_GLB_TIM10_CNT1;
 /**************************************************************************************/
 extern uint32_t EncTime[6];
@@ -141,13 +141,17 @@ void FL_1_Motor_SetDuty(MotorDefinition *motor, uint32_t duty_l, uint32_t duty_r
 	motor->md_chr_value = duty_r;
 	if(motor->md_prch == PAIRCHANNEL_1)
 	{
-		motor->md_htim->Instance->CCR1 = duty_l;
-		motor->md_htim->Instance->CCR2 = duty_r;
+		if(motor->md_chl == CHANNEL_1) motor->md_htim->Instance->CCR1 = duty_l;
+		else if(motor->md_chl == CHANNEL_2) motor->md_htim->Instance->CCR1 = duty_r;
+		if(motor->md_chr == CHANNEL_2) motor->md_htim->Instance->CCR2 = duty_r;
+		else if(motor->md_chr == CHANNEL_1) motor->md_htim->Instance->CCR2 = duty_l;
 	}
 	else if(motor->md_prch == PAIRCHANNEL_2)
 	{
-		motor->md_htim->Instance->CCR3 = duty_l;
-		motor->md_htim->Instance->CCR4 = duty_r;
+		if(motor->md_chl == CHANNEL_3) motor->md_htim->Instance->CCR3 = duty_l;
+		else if(motor->md_chl == CHANNEL_4) motor->md_htim->Instance->CCR3 = duty_r;
+		if(motor->md_chr == CHANNEL_4) motor->md_htim->Instance->CCR4 = duty_r;
+		else if(motor->md_chr == CHANNEL_3) motor->md_htim->Instance->CCR4 = duty_l;
 	}
 }
 void FL_2_Motor_SetDuty(MotorDefinition *motor, uint32_t duty_l, uint32_t duty_r)
@@ -156,13 +160,17 @@ void FL_2_Motor_SetDuty(MotorDefinition *motor, uint32_t duty_l, uint32_t duty_r
 	motor->md_chr_value = duty_r;
 	if(motor->md_prch == PAIRCHANNEL_1)
 	{
-		motor->md_htim->Instance->CCR1 = duty_l;
-		motor->md_htim->Instance->CCR2 = duty_r;
+		if(motor->md_chl == CHANNEL_1) motor->md_htim->Instance->CCR1 = duty_l;
+		else if(motor->md_chl == CHANNEL_2) motor->md_htim->Instance->CCR1 = duty_r;
+		if(motor->md_chr == CHANNEL_2) motor->md_htim->Instance->CCR2 = duty_r;
+		else if(motor->md_chr == CHANNEL_1) motor->md_htim->Instance->CCR2 = duty_l;
 	}
 	else if(motor->md_prch == PAIRCHANNEL_2)
 	{
-		motor->md_htim->Instance->CCR3 = duty_l;
-		motor->md_htim->Instance->CCR4 = duty_r;
+		if(motor->md_chl == CHANNEL_3) motor->md_htim->Instance->CCR3 = duty_l;
+		else if(motor->md_chl == CHANNEL_4) motor->md_htim->Instance->CCR3 = duty_r;
+		if(motor->md_chr == CHANNEL_4) motor->md_htim->Instance->CCR4 = duty_r;
+		else if(motor->md_chr == CHANNEL_3) motor->md_htim->Instance->CCR4 = duty_l;
 	}
 }
 void FL_1_Motor_ContinuousDuty(MotorDefinition *motor)
@@ -180,18 +188,9 @@ void FL_1_Motor_ContinuousDuty(MotorDefinition *motor)
 }
 void FL_2_Motor_ContinuousDuty(MotorDefinition *motor)
 {
-//	if(EncTime[0] == 0) EncTime[0] = 1;
-//	if(d_EncTime[0][Motor[0].md_encod_sn.cnt] == 0) ContRegulatorValue = 10; // d_EncCnt[0]
-//	else
-//	{
-//		cccc[Motor[0].md_encod_sn.cnt] = -Coef_P * ((60.0 / 1.0) - (10000.0 / (1.0 * d_EncTime[0][Motor[0].md_encod_sn.cnt])));
-//		ContRegulatorValue = ContRegulatorValue + (int16_t)(cccc[Motor[0].md_encod_sn.cnt]);
-//	}
-//	SpeedAngleMas[Motor[0].md_encod_sn.cnt] = ContRegulatorValue;
-
-	if(ContRegulatorValue > 0)
+	if(RegularValuePWM_PID[motor->md_NMotor] > 0)
 	{
-		motor->md_chr_value = ContRegulatorValue;
+		motor->md_chr_value = RegularValuePWM_PID[motor->md_NMotor];
 		motor->md_chl_value = 0;
 	}
 	if(motor->md_prch == PAIRCHANNEL_1)
@@ -242,7 +241,7 @@ void FL_2_Motor_Start(MotorDefinition *motor)
 	EncCntNow[0] = 0;
 	EncCntOld[0] = 0;
 
-	ContRegulatorValue = 0;
+	RegularValuePWM_PID[motor->md_NMotor] = 0;
 
 	if(motor->md_st == WAITING)
 	{
@@ -506,10 +505,14 @@ uint8_t Rcv_FL_2_SelectMotor(uint8_t byte)
 MotorMoveState Rcv_FL_2_SelectMotorDir(uint8_t byte, uint8_t num_mot)
 {
 	MotorMoveState dir_st;
-	if(byte == 0x03) dir_st = HOLD;
-	else if(byte == 0x04) dir_st = ANGLE_MODE;
+	if(byte == 0x00) dir_st = FREE;
+	else if(byte == 0x01) dir_st = LEFT;
+	else if(byte == 0x02) dir_st = RIGHT;
+	else if(byte == 0x03) dir_st = HOLD;
+	else if(byte == 0x03) dir_st = ANGLE_MODE;
 
 	Motor[num_mot].md_rotsd = dir_st;
+	Motor[num_mot].md_rotsd_now = dir_st;
 	Motor[num_mot].md_stParam.dir_cnf = true;
 	return dir_st;
 }
@@ -598,8 +601,6 @@ void FL_2_HandProtezStartInstruction(void)
 		else if ((Motor[i].md_stParam.fl2_angle && Motor[i].md_stParam.fl2_time))	// Angle-Time
 		{
 			TCM = ANGLE_TIME;
-			/*Calculate first error in definition*/
-//			FL_2_Motor_SetDuty(&Motor[i], 0, 60);
 
 			if(Motor[i].md_stParam.fl2_angle && Motor[i].md_stParam.fl2_time) Motor[i].md_st = CONFIGURATED;
 
@@ -617,9 +618,6 @@ void FL_2_HandProtezStartInstruction(void)
 
 		}
 	}
-
-//	ccc1 = 60.0 / 1000.0;
-
 //	if(ProtezGlobalConf.ADC_ChannelsEnable)
 //	{
 //		PR_ADC_Init(NowCountPointADC);
@@ -1148,14 +1146,20 @@ void ProtezInit(void)
 	/*Global variables*/
 	ProtezGlobalConf.NumMotorConfigured = 6;
 	/*Motor definition*/
-	Motor[0] = Motor_Settings(&htim3, PAIRCHANNEL_2, true);		// CH1
+	Motor[0] = Motor_Settings(&htim3, PAIRCHANNEL_2, true);	// CH1
 	Motor[1] = Motor_Settings(&htim4, PAIRCHANNEL_1, false);	// CH2
 	Motor[2] = Motor_Settings(&htim4, PAIRCHANNEL_2, false);	// CH3
 	Motor[3] = Motor_Settings(&htim1, PAIRCHANNEL_1, false);	// CH4
 	Motor[4] = Motor_Settings(&htim3, PAIRCHANNEL_1, false);	// CH5
 	Motor[5] = Motor_Settings(&htim5, PAIRCHANNEL_1, false);	// CH6
-	for(uint8_t i = 0; i < 6; i++) Motor[5].md_st = RELEASED;
-	for(uint8_t i = 0; i < 6; i++) FL_1_Motor_SetDuty(&Motor[i], 0, 0);
+	for(uint8_t i = 0; i < 6; i++)
+	{
+		Motor[i].md_NMotor = i;
+		Motor[i].md_st = RELEASED;
+		Motor[i].md_rotsd = FREE;
+		Motor[i].md_rotsd_now = FREE;
+		FL_1_Motor_SetDuty(&Motor[i], 0, 0);
+	}
 	/**/
 	Motor[0].md_htim->Instance->CCR3 = 0;
 	Motor[0].md_htim->Instance->CCR4 = 0;

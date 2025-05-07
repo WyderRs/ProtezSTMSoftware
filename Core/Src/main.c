@@ -42,7 +42,7 @@ extern uint32_t glb_dstc;
 extern double Coef_P;
 extern double Coef_I;
 extern double Coef_T;
-extern uint16_t ContRegulatorValue;
+extern uint16_t RegularValuePWM_PID[6];
 extern PRGlbDef ProtezGlobalConf;
 
 extern uint8_t UsartDataByte[30];
@@ -63,17 +63,17 @@ uint32_t EncTimeNow[6];
 uint32_t EncTimeOld[6];
 
 uint32_t d_EncCntOld[6];
-uint32_t d_EncTime[6][500];
+uint32_t d_EncTime[6];
 double d_Velocity[6][500];
 
 
-double RegVal[1000];
+double RegVal_PID[6];
 
 uint16_t SpeedAngleMas[5000];
 
 
-uint32_t LimitCNT;
-_Bool flag_motor_is_move = false;
+uint32_t LimitCNT[6];
+_Bool FLAG_MotorIsMove[6] = {false, };
 
 extern _Bool DeviceIsConnected;
 extern uint32_t num_pack;
@@ -1153,223 +1153,776 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+	uint8_t N_motor;
+	//-----------------------------------------------------------------------------------------------------------------------------------//
+
+	//-----------------------------------------------------------------------------------------------------------------------------------//
+	/*Encoder Motor #1*/
 	if (GPIO_Pin == GPIO_PIN_10)
 	{
-		if (HAL_GPIO_ReadPin(Motor[0].md_encod_sn.GPIOsupSens, Motor[0].md_encod_sn.PINsupSens) == GPIO_PIN_SET)
+		/*One Side*/ // LEFT
+		N_motor = 0;
+		if (HAL_GPIO_ReadPin(Motor[N_motor].md_encod_sn.GPIOsupSens, Motor[N_motor].md_encod_sn.PINsupSens) == GPIO_PIN_SET)
 		{
-			EncTimeNow[0] = Motor[0].md_drum_cnt;
-			EncCntNow[0] = Motor[0].md_encod_sn.cnt;
-			if(Motor[0].md_encod_sn.cnt == 0)
+//			if(Motor[N_motor].md_rotsd_now == RIGHT)
+//			{
+//				Motor[N_motor].md_rotsd_now = LEFT;
+//				Motor[N_motor].md_encod_sn.cnt = 0;
+//
+//				EncTimeNow[N_motor] = 0;
+//				EncCntNow[N_motor] = 0;
+//				EncTimeOld[N_motor] = 0;
+//
+//				RegVal_PID[N_motor] = 0;
+//				RegularValuePWM_PID[N_motor] = 0;
+//			}
+			if(Motor[N_motor].md_rotsd == LEFT)
 			{
-//				ContRegulatorValue = 50;
-				EncTimeOld[0] = EncTimeNow[0];
-			}
-			if(EncTimeOld[0] != EncTimeNow[0])
-			{
-//				EncTime[0] += (EncTimeNow[0] - EncTimeOld[0]);
-				d_EncTime[0][Motor[0].md_encod_sn.cnt] = (EncTimeNow[0] - EncTimeOld[0]);
-
-				RegVal[Motor[0].md_encod_sn.cnt] = Coef_P * ((((1.0 * Motor[0].md_FL2_Angle) / 1.5) / (Motor[0].md_FL2_Time * 0.01))
-						- (10000.0 / (1.0 * (d_EncTime[0][Motor[0].md_encod_sn.cnt]))));
-//						+ (RegValOld[Motor[0].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[0].md_encod_sn.cnt]));
-
-
-				int16_t temp = ContRegulatorValue + (int16_t)(RegVal[Motor[0].md_encod_sn.cnt]);
-				if(temp >= 900) ContRegulatorValue = 900;
-				else if(temp <= 50) ContRegulatorValue = 50;
-				else ContRegulatorValue = temp;
-
-
-				SpeedAngleMas[Motor[0].md_CountDataToRecv] = ContRegulatorValue;
-				Motor[0].md_CountDataToRecv++;
-			}
-
-
-			EncTimeOld[0] = EncTimeNow[0];
-//			d_EncCnt[0] = EncCntNow[0] - EncCntOld[0];
-//			EncCnt[0] += EncCntNow[0] - EncCntOld[0];
-//			EncCntOld[0] = EncCntNow[0];
-			Motor[0].md_encod_sn.cnt++;
-
-			if(Motor[0].TOM == WRM_ANGLE_MODE)
-			{
-				if(Motor[0].md_st == WORKING)
+				EncTimeNow[N_motor] = Motor[N_motor].md_drum_cnt;
+				EncCntNow[N_motor] = Motor[N_motor].md_encod_sn.cnt;
+				if(Motor[N_motor].md_encod_sn.cnt == 0) EncTimeOld[N_motor] = EncTimeNow[N_motor];
+				if(EncTimeOld[N_motor] != EncTimeNow[N_motor])
 				{
-					if(ContRegulatorValue < 0)
+	//				EncTime[N_motor] += (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+					d_EncTime[N_motor] = (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+
+					RegVal_PID[N_motor] = Coef_P * ((((1.0 * Motor[N_motor].md_FL2_Angle) / 1.5) / (Motor[N_motor].md_FL2_Time * 0.01))
+							- (10000.0 / (1.0 * (d_EncTime[N_motor]))));
+	//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
+
+
+					int16_t temp = RegularValuePWM_PID[N_motor] + (int16_t)(RegVal_PID[N_motor]);
+					if(temp >= 900) RegularValuePWM_PID[N_motor] = 999;
+					else if(temp <= 50) RegularValuePWM_PID[N_motor] = 50;
+					else RegularValuePWM_PID[N_motor] = temp;
+
+					SpeedAngleMas[Motor[N_motor].md_CountDataToRecv] = RegularValuePWM_PID[N_motor];
+					Motor[N_motor].md_CountDataToRecv++;
+				}
+
+				EncTimeOld[N_motor] = EncTimeNow[N_motor];
+	//			d_EncCnt[N_motor] = EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCnt[N_motor] += EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCntOld[N_motor] = EncCntNow[N_motor];
+				Motor[N_motor].md_encod_sn.cnt++;
+
+				if(Motor[N_motor].TOM == WRM_ANGLE_MODE)
+				{
+					if(Motor[N_motor].md_st == WORKING)
 					{
-						Motor[0].md_chl_value = ContRegulatorValue;
-						Motor[0].md_chr_value = 0;
-					}
-					else if(ContRegulatorValue > 0)
-					{
-						Motor[0].md_chr_value = ContRegulatorValue;
-						Motor[0].md_chl_value = 0;
-					}
-					else if(ContRegulatorValue == 0)
-					{
-						Motor[0].md_chr_value = 1000;
-						Motor[0].md_chl_value = 1000;
-					}
-					if(Motor[0].md_prch == PAIRCHANNEL_1)
-					{
-						Motor[0].md_htim->Instance->CCR1 = Motor[0].md_chl_value;
-						Motor[0].md_htim->Instance->CCR2 = Motor[0].md_chr_value;
-					}
-					else if(Motor[0].md_prch == PAIRCHANNEL_2)
-					{
-						Motor[0].md_htim->Instance->CCR3 = Motor[0].md_chl_value;
-						Motor[0].md_htim->Instance->CCR4 = Motor[0].md_chr_value;
+						FL_2_Motor_SetDuty(&Motor[N_motor], RegularValuePWM_PID[N_motor], 0);
+						if(RegularValuePWM_PID[N_motor] == 0)
+						{
+							FL_2_Motor_SetDuty(&Motor[N_motor], 1000, 1000);
+						}
 					}
 				}
+				FLAG_MotorIsMove[N_motor] = true;
+				Motor[N_motor].md_rotsd_now = LEFT;
 			}
-			flag_motor_is_move = true;
 		}
-		else if (HAL_GPIO_ReadPin(Motor[0].md_encod_sn.GPIOsupSens, Motor[0].md_encod_sn.PINsupSens) == GPIO_PIN_RESET)
+		/*Other Side*/ //RIGHT
+		if (HAL_GPIO_ReadPin(Motor[N_motor].md_encod_sn.GPIOsupSens, Motor[N_motor].md_encod_sn.PINsupSens) == GPIO_PIN_RESET)
 		{
-//			if (Motor[0].md_encod_sn.dir != RIGHT) Motor[0].md_encod_sn.cnt = 0;
-			Motor[0].md_encod_sn.dir = RIGHT;
+//			if(Motor[N_motor].md_rotsd_now == LEFT)
+//			{
+//				Motor[N_motor].md_rotsd_now = RIGHT;
+//				Motor[N_motor].md_encod_sn.cnt = 0;
+//
+//				EncTimeNow[N_motor] = 0;
+//				EncCntNow[N_motor] = 0;
+//				EncTimeOld[N_motor] = 0;
+//
+//				RegVal_PID[N_motor] = 0;
+//				RegularValuePWM_PID[N_motor] = 0;
+//			}
+			if(Motor[N_motor].md_rotsd == RIGHT)
+			{
+				EncTimeNow[N_motor] = Motor[N_motor].md_drum_cnt;
+				EncCntNow[N_motor] = Motor[N_motor].md_encod_sn.cnt;
+				if(Motor[N_motor].md_encod_sn.cnt == 0) EncTimeOld[N_motor] = EncTimeNow[N_motor];
+				if(EncTimeOld[N_motor] != EncTimeNow[N_motor])
+				{
+	//				EncTime[N_motor] += (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+					d_EncTime[N_motor] = (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+
+					RegVal_PID[N_motor] = Coef_P * ((((1.0 * Motor[N_motor].md_FL2_Angle) / 1.5) / (Motor[N_motor].md_FL2_Time * 0.01))
+							- (10000.0 / (1.0 * (d_EncTime[N_motor]))));
+	//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
+
+
+					int16_t temp = RegularValuePWM_PID[N_motor] + (int16_t)(RegVal_PID[N_motor]);
+					if(temp >= 900) RegularValuePWM_PID[N_motor] = 999;
+					else if(temp <= 50) RegularValuePWM_PID[N_motor] = 50;
+					else RegularValuePWM_PID[N_motor] = temp;
+
+					SpeedAngleMas[Motor[N_motor].md_CountDataToRecv] = RegularValuePWM_PID[N_motor];
+					Motor[N_motor].md_CountDataToRecv++;
+				}
+
+				EncTimeOld[N_motor] = EncTimeNow[N_motor];
+	//			d_EncCnt[N_motor] = EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCnt[N_motor] += EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCntOld[N_motor] = EncCntNow[N_motor];
+				Motor[N_motor].md_encod_sn.cnt++;
+
+				if(Motor[N_motor].TOM == WRM_ANGLE_MODE)
+				{
+					if(Motor[N_motor].md_st == WORKING)
+					{
+						FL_2_Motor_SetDuty(&Motor[N_motor], 0, RegularValuePWM_PID[N_motor]);
+						if(RegularValuePWM_PID[N_motor] == 0)
+						{
+							FL_2_Motor_SetDuty(&Motor[N_motor], 1000, 1000);
+						}
+					}
+				}
+				FLAG_MotorIsMove[N_motor] = true;
+				Motor[N_motor].md_rotsd_now = RIGHT;
+			}
+		}
+	}
+//-----------------------------------------------------------------------------------------------------------------------------------//
+
+//-----------------------------------------------------------------------------------------------------------------------------------//
+	/*Encoder Motor #2*/
+	if (GPIO_Pin == GPIO_PIN_14)
+	{
+		N_motor = 1;
+		if (HAL_GPIO_ReadPin(Motor[N_motor].md_encod_sn.GPIOsupSens, Motor[N_motor].md_encod_sn.PINsupSens) == GPIO_PIN_SET)
+		{
+//			if(Motor[N_motor].md_rotsd_now == RIGHT)
+//			{
+//				Motor[N_motor].md_rotsd_now = LEFT;
+//				Motor[N_motor].md_encod_sn.cnt = 0;
+//
+//				EncTimeNow[N_motor] = 0;
+//				EncCntNow[N_motor] = 0;
+//				EncTimeOld[N_motor] = 0;
+//
+//				RegVal_PID[N_motor] = 0;
+//				RegularValuePWM_PID[N_motor] = 0;
+//			}
+			if(Motor[N_motor].md_rotsd == LEFT)
+			{
+				EncTimeNow[N_motor] = Motor[N_motor].md_drum_cnt;
+				EncCntNow[N_motor] = Motor[N_motor].md_encod_sn.cnt;
+				if(Motor[N_motor].md_encod_sn.cnt == 0) EncTimeOld[N_motor] = EncTimeNow[N_motor];
+				if(EncTimeOld[N_motor] != EncTimeNow[N_motor])
+				{
+					// EncTime[N_motor] += (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+					d_EncTime[N_motor] = (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+
+					RegVal_PID[N_motor] = Coef_P * ((((1.0 * Motor[N_motor].md_FL2_Angle) / 1.5) / (Motor[N_motor].md_FL2_Time * 0.01))
+							- (10000.0 / (1.0 * (d_EncTime[N_motor]))));
+	//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
+
+
+					int16_t temp = RegularValuePWM_PID[N_motor] + (int16_t)(RegVal_PID[N_motor]);
+					if(temp >= 900) RegularValuePWM_PID[N_motor] = 999;
+					else if(temp <= 50) RegularValuePWM_PID[N_motor] = 50;
+					else RegularValuePWM_PID[N_motor] = temp;
+
+					SpeedAngleMas[Motor[N_motor].md_CountDataToRecv] = RegularValuePWM_PID[N_motor];
+					Motor[N_motor].md_CountDataToRecv++;
+				}
+
+				EncTimeOld[N_motor] = EncTimeNow[N_motor];
+	//			d_EncCnt[N_motor] = EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCnt[N_motor] += EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCntOld[N_motor] = EncCntNow[N_motor];
+				Motor[N_motor].md_encod_sn.cnt++;
+
+				if(Motor[N_motor].TOM == WRM_ANGLE_MODE)
+				{
+					if(Motor[N_motor].md_st == WORKING)
+					{
+						FL_2_Motor_SetDuty(&Motor[N_motor], RegularValuePWM_PID[N_motor], 0);
+						if(RegularValuePWM_PID[N_motor] == 0)
+						{
+							FL_2_Motor_SetDuty(&Motor[N_motor], 1000, 1000);
+						}
+					}
+				}
+				FLAG_MotorIsMove[N_motor] = true;
+				Motor[N_motor].md_rotsd_now = LEFT;
+			}
+		}
+		else if (HAL_GPIO_ReadPin(Motor[N_motor].md_encod_sn.GPIOsupSens, Motor[N_motor].md_encod_sn.PINsupSens) == GPIO_PIN_RESET)
+		{
+//			if(Motor[N_motor].md_rotsd_now == LEFT)
+//			{
+//				Motor[N_motor].md_rotsd_now = RIGHT;
+//				Motor[N_motor].md_encod_sn.cnt = 0;
+//
+//				EncTimeNow[N_motor] = 0;
+//				EncCntNow[N_motor] = 0;
+//				EncTimeOld[N_motor] = 0;
+//
+//				RegVal_PID[N_motor] = 0;
+//				RegularValuePWM_PID[N_motor] = 0;
+//			}
+			if(Motor[N_motor].md_rotsd == RIGHT)
+			{
+				EncTimeNow[N_motor] = Motor[N_motor].md_drum_cnt;
+				EncCntNow[N_motor] = Motor[N_motor].md_encod_sn.cnt;
+				if(Motor[N_motor].md_encod_sn.cnt == 0) EncTimeOld[N_motor] = EncTimeNow[N_motor];
+				if(EncTimeOld[N_motor] != EncTimeNow[N_motor])
+				{
+	//				EncTime[N_motor] += (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+					d_EncTime[N_motor] = (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+
+					RegVal_PID[N_motor] = Coef_P * ((((1.0 * Motor[N_motor].md_FL2_Angle) / 1.5) / (Motor[N_motor].md_FL2_Time * 0.01))
+							- (10000.0 / (1.0 * (d_EncTime[N_motor]))));
+	//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
+
+
+					int16_t temp = RegularValuePWM_PID[N_motor] + (int16_t)(RegVal_PID[N_motor]);
+					if(temp >= 900) RegularValuePWM_PID[N_motor] = 999;
+					else if(temp <= 50) RegularValuePWM_PID[N_motor] = 50;
+					else RegularValuePWM_PID[N_motor] = temp;
+
+					SpeedAngleMas[Motor[N_motor].md_CountDataToRecv] = RegularValuePWM_PID[N_motor];
+					Motor[N_motor].md_CountDataToRecv++;
+				}
+
+				EncTimeOld[N_motor] = EncTimeNow[N_motor];
+	//			d_EncCnt[N_motor] = EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCnt[N_motor] += EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCntOld[N_motor] = EncCntNow[N_motor];
+				Motor[N_motor].md_encod_sn.cnt++;
+
+				if(Motor[N_motor].TOM == WRM_ANGLE_MODE)
+				{
+					if(Motor[N_motor].md_st == WORKING)
+					{
+						FL_2_Motor_SetDuty(&Motor[N_motor], 0, RegularValuePWM_PID[N_motor]);
+						if(RegularValuePWM_PID[N_motor] == 0)
+						{
+							FL_2_Motor_SetDuty(&Motor[N_motor], 1000, 1000);
+						}
+					}
+				}
+				FLAG_MotorIsMove[N_motor] = true;
+				Motor[N_motor].md_rotsd_now = RIGHT;
+			}
+		}
+	}
+//-----------------------------------------------------------------------------------------------------------------------------------//
+
+
+
+
+
+
+//-----------------------------------------------------------------------------------------------------------------------------------//
+
+//-----------------------------------------------------------------------------------------------------------------------------------//
+//	/*Encoder Motor #3*/
+	if (GPIO_Pin == GPIO_PIN_12)
+	{
+		N_motor = 2;
+		if (HAL_GPIO_ReadPin(Motor[N_motor].md_encod_sn.GPIOsupSens, Motor[N_motor].md_encod_sn.PINsupSens) == GPIO_PIN_SET)
+		{
+//			if(Motor[N_motor].md_rotsd_now == RIGHT)
+//			{
+//				Motor[N_motor].md_rotsd_now = LEFT;
+//				Motor[N_motor].md_encod_sn.cnt = 0;
+//
+//				EncTimeNow[N_motor] = 0;
+//				EncCntNow[N_motor] = 0;
+//				EncTimeOld[N_motor] = 0;
+//
+//				RegVal_PID[N_motor] = 0;
+//				RegularValuePWM_PID[N_motor] = 0;
+//			}
+			if(Motor[N_motor].md_rotsd == LEFT)
+			{
+				EncTimeNow[N_motor] = Motor[N_motor].md_drum_cnt;
+				EncCntNow[N_motor] = Motor[N_motor].md_encod_sn.cnt;
+				if(Motor[N_motor].md_encod_sn.cnt == 0) EncTimeOld[N_motor] = EncTimeNow[N_motor];
+				if(EncTimeOld[N_motor] != EncTimeNow[N_motor])
+				{
+					// EncTime[N_motor] += (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+					d_EncTime[N_motor] = (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+
+					RegVal_PID[N_motor] = Coef_P * ((((1.0 * Motor[N_motor].md_FL2_Angle) / 1.5) / (Motor[N_motor].md_FL2_Time * 0.01))
+							- (10000.0 / (1.0 * (d_EncTime[N_motor]))));
+	//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
+
+
+					int16_t temp = RegularValuePWM_PID[N_motor] + (int16_t)(RegVal_PID[N_motor]);
+					if(temp >= 900) RegularValuePWM_PID[N_motor] = 999;
+					else if(temp <= 50) RegularValuePWM_PID[N_motor] = 50;
+					else RegularValuePWM_PID[N_motor] = temp;
+
+					SpeedAngleMas[Motor[N_motor].md_CountDataToRecv] = RegularValuePWM_PID[N_motor];
+					Motor[N_motor].md_CountDataToRecv++;
+				}
+
+				EncTimeOld[N_motor] = EncTimeNow[N_motor];
+	//			d_EncCnt[N_motor] = EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCnt[N_motor] += EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCntOld[N_motor] = EncCntNow[N_motor];
+				Motor[N_motor].md_encod_sn.cnt++;
+
+				if(Motor[N_motor].TOM == WRM_ANGLE_MODE)
+				{
+					if(Motor[N_motor].md_st == WORKING)
+					{
+						FL_2_Motor_SetDuty(&Motor[N_motor], RegularValuePWM_PID[N_motor], 0);
+						if(RegularValuePWM_PID[N_motor] == 0)
+						{
+							FL_2_Motor_SetDuty(&Motor[N_motor], 1000, 1000);
+						}
+					}
+				}
+				FLAG_MotorIsMove[N_motor] = true;
+				Motor[N_motor].md_rotsd_now = LEFT;
+			}
 
 		}
-//	if (GPIO_Pin == GPIO_PIN_14)
-//	{
-//		if (HAL_GPIO_ReadPin(Motor[1].md_encod_sn.GPIOsupSens, Motor[1].md_encod_sn.PINsupSens) == GPIO_PIN_SET)
-//		{
-//			if(Motor[1].md_encod_sn.dir != LEFT)
+		else if (HAL_GPIO_ReadPin(Motor[N_motor].md_encod_sn.GPIOsupSens, Motor[N_motor].md_encod_sn.PINsupSens) == GPIO_PIN_RESET)
+		{
+//			if(Motor[N_motor].md_rotsd_now == LEFT)
 //			{
-//				Motor[1].md_encod_sn.cnt = 1;
-//			}
-//			else
-//			{
-//				Motor[1].md_encod_sn.cnt++;
-//				Motor[1].md_encod_sn.dir = LEFT;
-//			}
-//		}
-//		else if (HAL_GPIO_ReadPin(Motor[1].md_encod_sn.GPIOsupSens, Motor[1].md_encod_sn.PINsupSens) == GPIO_PIN_RESET)
-//		{
-//			if(Motor[1].md_encod_sn.dir != RIGHT)
-//			{
-//				Motor[1].md_encod_sn.cnt = 1;
-//			}
-//			else
-//			{
-//				Motor[1].md_encod_sn.cnt++;
-//				Motor[1].md_encod_sn.dir = RIGHT;
-//			}
-//		}
-//	}
+//				Motor[N_motor].md_rotsd_now = RIGHT;
+//				Motor[N_motor].md_encod_sn.cnt = 0;
 //
-//	if (GPIO_Pin == GPIO_PIN_12)
-//	{
-//		if (HAL_GPIO_ReadPin(Motor[2].md_encod_sn.GPIOsupSens, Motor[2].md_encod_sn.PINsupSens) == GPIO_PIN_SET)
-//		{
-//			if(Motor[2].md_encod_sn.dir != LEFT)
-//			{
-//				Motor[2].md_encod_sn.cnt = 1;
-//			}
-//			else
-//			{
-//				Motor[2].md_encod_sn.cnt++;
-//				Motor[2].md_encod_sn.dir = LEFT;
-//			}
-//		}
-//		else if (HAL_GPIO_ReadPin(Motor[2].md_encod_sn.GPIOsupSens, Motor[2].md_encod_sn.PINsupSens) == GPIO_PIN_RESET)
-//		{
-//			if(Motor[2].md_encod_sn.dir != RIGHT)
-//			{
-//				Motor[2].md_encod_sn.cnt = 1;
-//			}
-//			else
-//			{
-//				Motor[2].md_encod_sn.cnt++;
-//				Motor[2].md_encod_sn.dir = RIGHT;
-//			}
-//		}
-//	}
+//				EncTimeNow[N_motor] = 0;
+//				EncCntNow[N_motor] = 0;
+//				EncTimeOld[N_motor] = 0;
 //
-//	if (GPIO_Pin == GPIO_PIN_5)
-//	{
-//		if (HAL_GPIO_ReadPin(Motor[3].md_encod_sn.GPIOsupSens, Motor[3].md_encod_sn.PINsupSens) == GPIO_PIN_SET)
-//		{
-//			if(Motor[3].md_encod_sn.dir != LEFT)
-//			{
-//				Motor[3].md_encod_sn.cnt = 1;
+//				RegVal_PID[N_motor] = 0;
+//				RegularValuePWM_PID[N_motor] = 0;
 //			}
-//			else
-//			{
-//				Motor[3].md_encod_sn.cnt++;
-//				Motor[3].md_encod_sn.dir = LEFT;
-//			}
-//		}
-//		else if (HAL_GPIO_ReadPin(Motor[3].md_encod_sn.GPIOsupSens, Motor[3].md_encod_sn.PINsupSens) == GPIO_PIN_RESET)
-//		{
-//			if(Motor[3].md_encod_sn.dir != RIGHT)
-//			{
-//				Motor[3].md_encod_sn.cnt = 1;
-//			}
-//			else
-//			{
-//				Motor[3].md_encod_sn.cnt++;
-//				Motor[3].md_encod_sn.dir = RIGHT;
-//			}
-//		}
-//	}
-//
-//	if (GPIO_Pin == GPIO_PIN_3)
-//	{
-//		if (HAL_GPIO_ReadPin(Motor[4].md_encod_sn.GPIOsupSens, Motor[4].md_encod_sn.PINsupSens) == GPIO_PIN_SET)
-//		{
-//			if(Motor[4].md_encod_sn.dir != LEFT)
-//			{
-//				Motor[4].md_encod_sn.cnt = 1;
-//			}
-//			else
-//			{
-//				Motor[4].md_encod_sn.cnt++;
-//				Motor[4].md_encod_sn.dir = LEFT;
-//			}
-//		}
-//		else if (HAL_GPIO_ReadPin(Motor[4].md_encod_sn.GPIOsupSens, Motor[4].md_encod_sn.PINsupSens) == GPIO_PIN_RESET)
-//		{
-//			if(Motor[4].md_encod_sn.dir != RIGHT)
-//			{
-//				Motor[4].md_encod_sn.cnt = 1;
-//			}
-//			else
-//			{
-//				Motor[4].md_encod_sn.cnt++;
-//				Motor[4].md_encod_sn.dir = RIGHT;
-//			}
-//		}
-//	}
-//
-//	if (GPIO_Pin == GPIO_PIN_1)
-//	{
-//		if (HAL_GPIO_ReadPin(Motor[5].md_encod_sn.GPIOsupSens, Motor[5].md_encod_sn.PINsupSens) == GPIO_PIN_SET)
-//		{
-//			if(Motor[5].md_encod_sn.dir != LEFT)
-//			{
-//				Motor[5].md_encod_sn.cnt = 1;
-//			}
-//			else
-//			{
-//				Motor[5].md_encod_sn.cnt++;
-//				Motor[5].md_encod_sn.dir = LEFT;
-//			}
-//		}
-//		else if (HAL_GPIO_ReadPin(Motor[5].md_encod_sn.GPIOsupSens, Motor[5].md_encod_sn.PINsupSens) == GPIO_PIN_RESET)
-//		{
-//			if(Motor[5].md_encod_sn.dir != RIGHT)
-//			{
-//				Motor[5].md_encod_sn.cnt = 1;
-//			}
-//			else
-//			{
-//				Motor[5].md_encod_sn.cnt++;
-//				Motor[5].md_encod_sn.dir = RIGHT;
-//			}
-//		}
+			if(Motor[N_motor].md_rotsd == RIGHT)
+			{
+				EncTimeNow[N_motor] = Motor[N_motor].md_drum_cnt;
+				EncCntNow[N_motor] = Motor[N_motor].md_encod_sn.cnt;
+				if(Motor[N_motor].md_encod_sn.cnt == 0) EncTimeOld[N_motor] = EncTimeNow[N_motor];
+				if(EncTimeOld[N_motor] != EncTimeNow[N_motor])
+				{
+	//				EncTime[N_motor] += (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+					d_EncTime[N_motor] = (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+
+					RegVal_PID[N_motor] = Coef_P * ((((1.0 * Motor[N_motor].md_FL2_Angle) / 1.5) / (Motor[N_motor].md_FL2_Time * 0.01))
+							- (10000.0 / (1.0 * (d_EncTime[N_motor]))));
+	//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
+
+
+					int16_t temp = RegularValuePWM_PID[N_motor] + (int16_t)(RegVal_PID[N_motor]);
+					if(temp >= 900) RegularValuePWM_PID[N_motor] = 999;
+					else if(temp <= 50) RegularValuePWM_PID[N_motor] = 50;
+					else RegularValuePWM_PID[N_motor] = temp;
+
+					SpeedAngleMas[Motor[N_motor].md_CountDataToRecv] = RegularValuePWM_PID[N_motor];
+					Motor[N_motor].md_CountDataToRecv++;
+				}
+
+				EncTimeOld[N_motor] = EncTimeNow[N_motor];
+	//			d_EncCnt[N_motor] = EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCnt[N_motor] += EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCntOld[N_motor] = EncCntNow[N_motor];
+				Motor[N_motor].md_encod_sn.cnt++;
+
+				if(Motor[N_motor].TOM == WRM_ANGLE_MODE)
+				{
+					if(Motor[N_motor].md_st == WORKING)
+					{
+						FL_2_Motor_SetDuty(&Motor[N_motor], 0, RegularValuePWM_PID[N_motor]);
+						if(RegularValuePWM_PID[N_motor] == 0)
+						{
+							FL_2_Motor_SetDuty(&Motor[N_motor], 1000, 1000);
+						}
+					}
+				}
+				FLAG_MotorIsMove[N_motor] = true;
+				Motor[N_motor].md_rotsd_now = RIGHT;
+			}
+		}
 	}
 
+//-----------------------------------------------------------------------------------------------------------------------------------//
+
+//-----------------------------------------------------------------------------------------------------------------------------------//
+//	/*Encoder Motor #4*/
+	if (GPIO_Pin == GPIO_PIN_5)
+	{
+		N_motor = 3;
+		if (HAL_GPIO_ReadPin(Motor[N_motor].md_encod_sn.GPIOsupSens, Motor[N_motor].md_encod_sn.PINsupSens) == GPIO_PIN_SET)
+		{
+//			if(Motor[N_motor].md_rotsd_now == RIGHT)
+//			{
+//				Motor[N_motor].md_rotsd_now = LEFT;
+//				Motor[N_motor].md_encod_sn.cnt = 0;
+//
+//				EncTimeNow[N_motor] = 0;
+//				EncCntNow[N_motor] = 0;
+//				EncTimeOld[N_motor] = 0;
+//
+//				RegVal_PID[N_motor] = 0;
+//				RegularValuePWM_PID[N_motor] = 0;
+//			}
+			if(Motor[N_motor].md_rotsd == LEFT)
+			{
+				EncTimeNow[N_motor] = Motor[N_motor].md_drum_cnt;
+				EncCntNow[N_motor] = Motor[N_motor].md_encod_sn.cnt;
+				if(Motor[N_motor].md_encod_sn.cnt == 0) EncTimeOld[N_motor] = EncTimeNow[N_motor];
+				if(EncTimeOld[N_motor] != EncTimeNow[N_motor])
+				{
+					// EncTime[N_motor] += (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+					d_EncTime[N_motor] = (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+
+					RegVal_PID[N_motor] = Coef_P * ((((1.0 * Motor[N_motor].md_FL2_Angle) / 1.5) / (Motor[N_motor].md_FL2_Time * 0.01))
+							- (10000.0 / (1.0 * (d_EncTime[N_motor]))));
+	//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
+
+
+					int16_t temp = RegularValuePWM_PID[N_motor] + (int16_t)(RegVal_PID[N_motor]);
+					if(temp >= 900) RegularValuePWM_PID[N_motor] = 999;
+					else if(temp <= 50) RegularValuePWM_PID[N_motor] = 50;
+					else RegularValuePWM_PID[N_motor] = temp;
+
+					SpeedAngleMas[Motor[N_motor].md_CountDataToRecv] = RegularValuePWM_PID[N_motor];
+					Motor[N_motor].md_CountDataToRecv++;
+				}
+
+				EncTimeOld[N_motor] = EncTimeNow[N_motor];
+	//			d_EncCnt[N_motor] = EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCnt[N_motor] += EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCntOld[N_motor] = EncCntNow[N_motor];
+				Motor[N_motor].md_encod_sn.cnt++;
+
+				if(Motor[N_motor].TOM == WRM_ANGLE_MODE)
+				{
+					if(Motor[N_motor].md_st == WORKING)
+					{
+						FL_2_Motor_SetDuty(&Motor[N_motor], RegularValuePWM_PID[N_motor], 0);
+						if(RegularValuePWM_PID[N_motor] == 0)
+						{
+							FL_2_Motor_SetDuty(&Motor[N_motor], 1000, 1000);
+						}
+					}
+				}
+				FLAG_MotorIsMove[N_motor] = true;
+				Motor[N_motor].md_rotsd_now = LEFT;
+			}
+		}
+		else if (HAL_GPIO_ReadPin(Motor[N_motor].md_encod_sn.GPIOsupSens, Motor[N_motor].md_encod_sn.PINsupSens) == GPIO_PIN_RESET)
+		{
+//			if(Motor[N_motor].md_rotsd_now == LEFT)
+//			{
+//				Motor[N_motor].md_rotsd_now = RIGHT;
+//				Motor[N_motor].md_encod_sn.cnt = 0;
+//
+//				EncTimeNow[N_motor] = 0;
+//				EncCntNow[N_motor] = 0;
+//				EncTimeOld[N_motor] = 0;
+//
+//				RegVal_PID[N_motor] = 0;
+//				RegularValuePWM_PID[N_motor] = 0;
+//			}
+			if(Motor[N_motor].md_rotsd == RIGHT)
+			{
+				EncTimeNow[N_motor] = Motor[N_motor].md_drum_cnt;
+				EncCntNow[N_motor] = Motor[N_motor].md_encod_sn.cnt;
+				if(Motor[N_motor].md_encod_sn.cnt == 0) EncTimeOld[N_motor] = EncTimeNow[N_motor];
+				if(EncTimeOld[N_motor] != EncTimeNow[N_motor])
+				{
+	//				EncTime[N_motor] += (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+					d_EncTime[N_motor] = (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+
+					RegVal_PID[N_motor] = Coef_P * ((((1.0 * Motor[N_motor].md_FL2_Angle) / 1.5) / (Motor[N_motor].md_FL2_Time * 0.01))
+							- (10000.0 / (1.0 * (d_EncTime[N_motor]))));
+	//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
+
+
+					int16_t temp = RegularValuePWM_PID[N_motor] + (int16_t)(RegVal_PID[N_motor]);
+					if(temp >= 900) RegularValuePWM_PID[N_motor] = 999;
+					else if(temp <= 50) RegularValuePWM_PID[N_motor] = 50;
+					else RegularValuePWM_PID[N_motor] = temp;
+
+					SpeedAngleMas[Motor[N_motor].md_CountDataToRecv] = RegularValuePWM_PID[N_motor];
+					Motor[N_motor].md_CountDataToRecv++;
+				}
+
+				EncTimeOld[N_motor] = EncTimeNow[N_motor];
+	//			d_EncCnt[N_motor] = EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCnt[N_motor] += EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCntOld[N_motor] = EncCntNow[N_motor];
+				Motor[N_motor].md_encod_sn.cnt++;
+
+				if(Motor[N_motor].TOM == WRM_ANGLE_MODE)
+				{
+					if(Motor[N_motor].md_st == WORKING)
+					{
+						FL_2_Motor_SetDuty(&Motor[N_motor], 0, RegularValuePWM_PID[N_motor]);
+						if(RegularValuePWM_PID[N_motor] == 0)
+						{
+							FL_2_Motor_SetDuty(&Motor[N_motor], 1000, 1000);
+						}
+					}
+				}
+				FLAG_MotorIsMove[N_motor] = true;
+				Motor[N_motor].md_rotsd_now = RIGHT;
+			}
+		}
+	}
+//-----------------------------------------------------------------------------------------------------------------------------------//
+
+//-----------------------------------------------------------------------------------------------------------------------------------//
+//		/*Encoder Motor #5*/
+	if(GPIO_Pin == GPIO_PIN_3)
+	{
+		N_motor = 4;
+		if (HAL_GPIO_ReadPin(Motor[N_motor].md_encod_sn.GPIOsupSens, Motor[N_motor].md_encod_sn.PINsupSens) == GPIO_PIN_SET)
+		{
+//			if(Motor[N_motor].md_rotsd_now == RIGHT)
+//			{
+//				Motor[N_motor].md_rotsd_now = LEFT;
+//				Motor[N_motor].md_encod_sn.cnt = 0;
+//
+//				EncTimeNow[N_motor] = 0;
+//				EncCntNow[N_motor] = 0;
+//				EncTimeOld[N_motor] = 0;
+//
+//				RegVal_PID[N_motor] = 0;
+//				RegularValuePWM_PID[N_motor] = 0;
+//			}
+			if(Motor[N_motor].md_rotsd == LEFT)
+			{
+				EncTimeNow[N_motor] = Motor[N_motor].md_drum_cnt;
+				EncCntNow[N_motor] = Motor[N_motor].md_encod_sn.cnt;
+				if(Motor[N_motor].md_encod_sn.cnt == 0) EncTimeOld[N_motor] = EncTimeNow[N_motor];
+				if(EncTimeOld[N_motor] != EncTimeNow[N_motor])
+				{
+					// EncTime[N_motor] += (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+					d_EncTime[N_motor] = (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+
+					RegVal_PID[N_motor] = Coef_P * ((((1.0 * Motor[N_motor].md_FL2_Angle) / 1.5) / (Motor[N_motor].md_FL2_Time * 0.01))
+							- (10000.0 / (1.0 * (d_EncTime[N_motor]))));
+	//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
+
+
+					int16_t temp = RegularValuePWM_PID[N_motor] + (int16_t)(RegVal_PID[N_motor]);
+					if(temp >= 900) RegularValuePWM_PID[N_motor] = 999;
+					else if(temp <= 50) RegularValuePWM_PID[N_motor] = 50;
+					else RegularValuePWM_PID[N_motor] = temp;
+
+					SpeedAngleMas[Motor[N_motor].md_CountDataToRecv] = RegularValuePWM_PID[N_motor];
+					Motor[N_motor].md_CountDataToRecv++;
+				}
+
+				EncTimeOld[N_motor] = EncTimeNow[N_motor];
+	//			d_EncCnt[N_motor] = EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCnt[N_motor] += EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCntOld[N_motor] = EncCntNow[N_motor];
+				Motor[N_motor].md_encod_sn.cnt++;
+
+				if(Motor[N_motor].TOM == WRM_ANGLE_MODE)
+				{
+					if(Motor[N_motor].md_st == WORKING)
+					{
+						FL_2_Motor_SetDuty(&Motor[N_motor], RegularValuePWM_PID[N_motor], 0);
+						if(RegularValuePWM_PID[N_motor] == 0)
+						{
+							FL_2_Motor_SetDuty(&Motor[N_motor], 1000, 1000);
+						}
+					}
+				}
+				FLAG_MotorIsMove[N_motor] = true;
+				Motor[N_motor].md_rotsd_now = LEFT;
+			}
+		}
+		else if (HAL_GPIO_ReadPin(Motor[N_motor].md_encod_sn.GPIOsupSens, Motor[N_motor].md_encod_sn.PINsupSens) == GPIO_PIN_RESET)
+		{
+//			if(Motor[N_motor].md_rotsd_now == LEFT)
+//			{
+//				Motor[N_motor].md_rotsd_now = RIGHT;
+//				Motor[N_motor].md_encod_sn.cnt = 0;
+//
+//				EncTimeNow[N_motor] = 0;
+//				EncCntNow[N_motor] = 0;
+//				EncTimeOld[N_motor] = 0;
+//
+//				RegVal_PID[N_motor] = 0;
+//				RegularValuePWM_PID[N_motor] = 0;
+//			}
+			if(Motor[N_motor].md_rotsd == RIGHT)
+			{
+				EncTimeNow[N_motor] = Motor[N_motor].md_drum_cnt;
+				EncCntNow[N_motor] = Motor[N_motor].md_encod_sn.cnt;
+				if(Motor[N_motor].md_encod_sn.cnt == 0) EncTimeOld[N_motor] = EncTimeNow[N_motor];
+				if(EncTimeOld[N_motor] != EncTimeNow[N_motor])
+				{
+	//				EncTime[N_motor] += (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+					d_EncTime[N_motor] = (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+
+					RegVal_PID[N_motor] = Coef_P * ((((1.0 * Motor[N_motor].md_FL2_Angle) / 1.5) / (Motor[N_motor].md_FL2_Time * 0.01))
+							- (10000.0 / (1.0 * (d_EncTime[N_motor]))));
+	//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
+
+
+					int16_t temp = RegularValuePWM_PID[N_motor] + (int16_t)(RegVal_PID[N_motor]);
+					if(temp >= 900) RegularValuePWM_PID[N_motor] = 999;
+					else if(temp <= 50) RegularValuePWM_PID[N_motor] = 50;
+					else RegularValuePWM_PID[N_motor] = temp;
+
+					SpeedAngleMas[Motor[N_motor].md_CountDataToRecv] = RegularValuePWM_PID[N_motor];
+					Motor[N_motor].md_CountDataToRecv++;
+				}
+
+				EncTimeOld[N_motor] = EncTimeNow[N_motor];
+	//			d_EncCnt[N_motor] = EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCnt[N_motor] += EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCntOld[N_motor] = EncCntNow[N_motor];
+				Motor[N_motor].md_encod_sn.cnt++;
+
+				if(Motor[N_motor].TOM == WRM_ANGLE_MODE)
+				{
+					if(Motor[N_motor].md_st == WORKING)
+					{
+						FL_2_Motor_SetDuty(&Motor[N_motor], 0, RegularValuePWM_PID[N_motor]);
+						if(RegularValuePWM_PID[N_motor] == 0)
+						{
+							FL_2_Motor_SetDuty(&Motor[N_motor], 1000, 1000);
+						}
+					}
+				}
+				FLAG_MotorIsMove[N_motor] = true;
+				Motor[N_motor].md_rotsd_now = RIGHT;
+			}
+		}
+	}
+//-----------------------------------------------------------------------------------------------------------------------------------//
+
+//-----------------------------------------------------------------------------------------------------------------------------------//
+//	/*Encoder Motor #6*/
+
+	if (GPIO_Pin == GPIO_PIN_1)
+	{
+		N_motor = 5;
+		if (HAL_GPIO_ReadPin(Motor[N_motor].md_encod_sn.GPIOsupSens, Motor[N_motor].md_encod_sn.PINsupSens) == GPIO_PIN_SET)
+		{
+//			if(Motor[N_motor].md_rotsd_now == RIGHT)
+//			{
+//				Motor[N_motor].md_rotsd_now = LEFT;
+//				Motor[N_motor].md_encod_sn.cnt = 0;
+//
+//				EncTimeNow[N_motor] = 0;
+//				EncCntNow[N_motor] = 0;
+//				EncTimeOld[N_motor] = 0;
+//
+//				RegVal_PID[N_motor] = 0;
+//				RegularValuePWM_PID[N_motor] = 0;
+//			}
+			if(Motor[N_motor].md_rotsd == LEFT)
+			{
+				EncTimeNow[N_motor] = Motor[N_motor].md_drum_cnt;
+				EncCntNow[N_motor] = Motor[N_motor].md_encod_sn.cnt;
+				if(Motor[N_motor].md_encod_sn.cnt == 0) EncTimeOld[N_motor] = EncTimeNow[N_motor];
+				if(EncTimeOld[N_motor] != EncTimeNow[N_motor])
+				{
+					// EncTime[N_motor] += (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+					d_EncTime[N_motor] = (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+
+					RegVal_PID[N_motor] = Coef_P * ((((1.0 * Motor[N_motor].md_FL2_Angle) / 1.5) / (Motor[N_motor].md_FL2_Time * 0.01))
+							- (10000.0 / (1.0 * (d_EncTime[N_motor]))));
+	//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
+
+
+					int16_t temp = RegularValuePWM_PID[N_motor] + (int16_t)(RegVal_PID[N_motor]);
+					if(temp >= 900) RegularValuePWM_PID[N_motor] = 999;
+					else if(temp <= 50) RegularValuePWM_PID[N_motor] = 50;
+					else RegularValuePWM_PID[N_motor] = temp;
+
+					SpeedAngleMas[Motor[N_motor].md_CountDataToRecv] = RegularValuePWM_PID[N_motor];
+					Motor[N_motor].md_CountDataToRecv++;
+				}
+
+				EncTimeOld[N_motor] = EncTimeNow[N_motor];
+	//			d_EncCnt[N_motor] = EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCnt[N_motor] += EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCntOld[N_motor] = EncCntNow[N_motor];
+				Motor[N_motor].md_encod_sn.cnt++;
+
+				if(Motor[N_motor].TOM == WRM_ANGLE_MODE)
+				{
+					if(Motor[N_motor].md_st == WORKING)
+					{
+						FL_2_Motor_SetDuty(&Motor[N_motor], RegularValuePWM_PID[N_motor], 0);
+						if(RegularValuePWM_PID[N_motor] == 0)
+						{
+							FL_2_Motor_SetDuty(&Motor[N_motor], 1000, 1000);
+						}
+					}
+				}
+				FLAG_MotorIsMove[N_motor] = true;
+				Motor[N_motor].md_rotsd_now = LEFT;
+			}
+		}
+		else if (HAL_GPIO_ReadPin(Motor[N_motor].md_encod_sn.GPIOsupSens, Motor[N_motor].md_encod_sn.PINsupSens) == GPIO_PIN_RESET)
+		{
+//			if(Motor[N_motor].md_rotsd_now == LEFT)
+//			{
+//				Motor[N_motor].md_rotsd_now = RIGHT;
+//				Motor[N_motor].md_encod_sn.cnt = 0;
+//
+//				EncTimeNow[N_motor] = 0;
+//				EncCntNow[N_motor] = 0;
+//				EncTimeOld[N_motor] = 0;
+//
+//				RegVal_PID[N_motor] = 0;
+//				RegularValuePWM_PID[N_motor] = 0;
+//			}
+			if(Motor[N_motor].md_rotsd == RIGHT)
+			{
+				EncTimeNow[N_motor] = Motor[N_motor].md_drum_cnt;
+				EncCntNow[N_motor] = Motor[N_motor].md_encod_sn.cnt;
+				if(Motor[N_motor].md_encod_sn.cnt == 0) EncTimeOld[N_motor] = EncTimeNow[N_motor];
+				if(EncTimeOld[N_motor] != EncTimeNow[N_motor])
+				{
+	//				EncTime[N_motor] += (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+					d_EncTime[N_motor] = (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
+
+					RegVal_PID[N_motor] = Coef_P * ((((1.0 * Motor[N_motor].md_FL2_Angle) / 1.5) / (Motor[N_motor].md_FL2_Time * 0.01))
+							- (10000.0 / (1.0 * (d_EncTime[N_motor]))));
+	//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
+
+
+					int16_t temp = RegularValuePWM_PID[N_motor] + (int16_t)(RegVal_PID[N_motor]);
+					if(temp >= 900) RegularValuePWM_PID[N_motor] = 999;
+					else if(temp <= 50) RegularValuePWM_PID[N_motor] = 50;
+					else RegularValuePWM_PID[N_motor] = temp;
+
+					SpeedAngleMas[Motor[N_motor].md_CountDataToRecv] = RegularValuePWM_PID[N_motor];
+					Motor[N_motor].md_CountDataToRecv++;
+				}
+
+				EncTimeOld[N_motor] = EncTimeNow[N_motor];
+	//			d_EncCnt[N_motor] = EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCnt[N_motor] += EncCntNow[N_motor] - EncCntOld[N_motor];
+	//			EncCntOld[N_motor] = EncCntNow[N_motor];
+				Motor[N_motor].md_encod_sn.cnt++;
+
+				if(Motor[N_motor].TOM == WRM_ANGLE_MODE)
+				{
+					if(Motor[N_motor].md_st == WORKING)
+					{
+						FL_2_Motor_SetDuty(&Motor[N_motor], 0, RegularValuePWM_PID[N_motor]);
+						if(RegularValuePWM_PID[N_motor] == 0)
+						{
+							FL_2_Motor_SetDuty(&Motor[N_motor], 1000, 1000);
+						}
+					}
+				}
+				FLAG_MotorIsMove[N_motor] = true;
+				Motor[N_motor].md_rotsd_now = RIGHT;
+			}
+
+		}
+	}
 }
 //void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 //{

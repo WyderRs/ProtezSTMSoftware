@@ -160,12 +160,12 @@ typedef struct MotorDefinition
 	uint32_t md_chl_value;			// Value PWM count (CCRN)
 	uint32_t md_chr_value;			// Value PWM count (CCRN)
 	MotorState md_st;				// State now
-	uint16_t md_workTime;				// Time work instruction
-	uint16_t md_delayTime;				// Time delay before start work instruction
-	uint16_t md_startWorkTime;			// Tick 0.01s for to start work
-	uint16_t md_stopWorkTime;			// Tick 0.01s for to stop work
-	EncoderSens md_encod_sn;			// Encode sensor
-	_Bool EnableADC;					// Enable adc conversion
+	uint16_t md_workTime;			// Time work instruction
+	uint16_t md_delayTime;			// Time delay before start work instruction
+	uint16_t md_startWorkTime;		// Tick 0.01s for to start work
+	uint16_t md_stopWorkTime;		// Tick 0.01s for to stop work
+	EncoderSens md_encod_sn;		// Encode sensor
+	_Bool EnableADC;				// Enable adc conversion
 
 	StatusParam md_stParam;
 
@@ -187,8 +187,8 @@ typedef struct MotorDefinition
 	uint32_t md_drum_cnt;			// Drum counter motor
 
 	TypeOperationMode TOM;
-
-
+	NumMotor md_NMotor;
+	MotorMoveState md_rotsd_now;
 
 //	MotorFlagParam md_ConfigSettingsParam;	// Flags init parameters
 } MotorDefinition;
