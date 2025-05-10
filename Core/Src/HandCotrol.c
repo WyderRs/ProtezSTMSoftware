@@ -13,7 +13,8 @@
 extern volatile uint32_t GLB_Time[3];	// Counter time: [0] - 1s, [1] - 0.1s, [2] - 0.01s
 uint32_t TEST_cntTim2 = 0;				// Test variables (counter TIM2)
 uint8_t ADC_Data[500] = {0, };			// Data received from ADC
-//uint8_t ADC_DataSent[5000] = {0, };			// ALL Data of sent
+uint8_t FeedBackData[500];				// FeedBack Data
+uint32_t FeedBackDataCount;				// Count FeedBack Data
 uint32_t ADC_Channels[6] = {0, };		// Number ADC channels
 uint32_t drts = 0; 						// Number data ready to send
 uint32_t drts_2 = 0; 						// Number data ready to send from other plate
@@ -252,7 +253,6 @@ void FL_2_Motor_Start(MotorDefinition *motor)
 {
 	DRIVER_CTRL_ON;
 	motor->Encoder.CNT = 0;
-	Motor[0].md_CountDataToRecv = 0;
 	motor->md_FL2_NowAngle = 0;
 	EncTime[0] = 0;
 	EncTimeNow[0] = 0;
@@ -639,10 +639,21 @@ void FL_2_HandProtezStartInstruction(void)
 
 		}
 	}
-//	if(ProtezGlobalConf.ADC_ChannelsEnable)
-//	{
-//		PR_ADC_Init(NowCountPointADC);
-//	}
+
+	uint8_t num_ch = 0;
+	for(uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
+	{
+		if(Motor[i].md_EnableFeedBack)
+		{
+			num_ch++;
+			ProtezGlobalConf.FeedBack = true;
+		}
+	}
+	ProtezGlobalConf.md_countMotorFeedBackEnable[0] = num_ch;
+
+
+
+
 	for(uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
 	{
 		if(Motor[i].md_st == CONFIGURATED)

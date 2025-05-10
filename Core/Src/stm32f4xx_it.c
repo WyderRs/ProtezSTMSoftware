@@ -35,7 +35,9 @@ extern PRGlbDef ProtezGlobalConf;
 extern uint32_t glb_dstc;
 extern uint32_t Target_dtsc[6];
 extern uint32_t drts;
-extern uint8_t ADC_Data[100];
+extern uint8_t ADC_Data[500];
+extern uint8_t FeedBackData[500];
+extern uint32_t FeedBackDataCount;
 extern uint16_t RegularValuePWM_PID[6];
 extern bool FLAG_MotorIsMove[6];
 uint16_t count_last_bytes;
@@ -44,10 +46,10 @@ extern uint8_t GLB_TypeCtrl;
 extern FL2_TypeCtrlMove TCM;
 
 extern uint32_t TEST_cntTim2;
+extern uint32_t num_pack;
 
 
 
-extern uint16_t SpeedAngleMas[5000];
 
 extern uint32_t d_EncTime[6][500];
 
@@ -63,6 +65,12 @@ extern uint32_t dstc;
 extern uint32_t drts_2;
 
 extern uint8_t UsartData[120];
+
+
+
+
+
+extern uint32_t FeedBackDataCount_TEST;
 
 /* USER CODE END TD */
 
@@ -308,13 +316,52 @@ void TIM1_BRK_TIM9_IRQHandler(void)
 				TransmitDataFlags[1] = false;
 			}
 
-			DMA2_Stream0->NDTR;
-			CDC_Transmit_FS(&ADC_Data[0], drts * 2 + temp);
-			dstc += drts * 2;
-			glb_dstc += drts * 2;
+			if(GLB_TypeCtrl == 0x01) // Pwm Mode
+			{
+				CDC_Transmit_FS(&ADC_Data[0], drts * 2 + temp);
+				dstc += drts * 2;
+				glb_dstc += drts * 2;
+			}
+			else if(GLB_TypeCtrl == 0x02) // Angle Mode
+			{
+				CDC_Transmit_FS(&FeedBackData[0], 2 * num_pack * ProtezGlobalConf.md_countMotorFeedBackEnable[0]);
+
+			}
 
 
 			TransmitDataFlags[0] = false;
+		}
+	}
+	else if(ThisDeviceOnUsartCtrl)
+	{
+		if(GLB_TypeCtrl == 0x02) // if ANGLE_Mode
+		{
+			if(TransmitDataFlags[0])
+			{
+				uint32_t temp = 0;
+
+
+
+
+			}
+
+		}
+
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 //			uint32_t Target_dtsc_temp = 0;
@@ -334,8 +381,6 @@ void TIM1_BRK_TIM9_IRQHandler(void)
 //					glb_dstc += count_last_bytes;
 //				}
 //			}
-		}
-	}
 
 
 
@@ -354,6 +399,7 @@ void TIM1_BRK_TIM9_IRQHandler(void)
 void TIM1_UP_TIM10_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
+	uint8_t j = 0;
 	for(uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
 	{
 		if(Motor[i].TOM == WRM_ANGLE_MODE)
@@ -370,8 +416,19 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						if(Motor[i].md_rotsd == Motor[i].Encoder.side[0]) FL_2_Motor_SetDuty(&Motor[i], RegularValuePWM_PID[i], 0);
 						else if(Motor[i].md_rotsd == Motor[i].Encoder.side[1]) FL_2_Motor_SetDuty(&Motor[i], 0, RegularValuePWM_PID[i]);
 
-						SpeedAngleMas[Motor[i].md_CountDataToRecv] = RegularValuePWM_PID[i];
-						Motor[i].md_CountDataToRecv++;
+
+						FeedBackData[j * num_pack * 2 + FeedBackDataCount] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
+						FeedBackData[(j * num_pack * 2) + FeedBackDataCount + 1] = (uint8_t)(RegularValuePWM_PID[i] & 0xFF00) >> 8;
+						FeedBackDataCount += 2;
+						FeedBackDataCount_TEST += 2;
+
+						if(FeedBackDataCount >= 2 * num_pack * ProtezGlobalConf.md_countMotorFeedBackEnable[0])
+						{
+							FeedBackDataCount = 0;
+							TransmitDataFlags[0] = true;
+						}
+
+						j++;
 						LimitCNT[i] = 0;
 					}
 				}
@@ -452,6 +509,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 			{
 				if ((Motor[i].md_st == WAITING) && (GLB_Time[2] >= Motor[i].md_FL2_startWorkTime))
 				{
+					FeedBackDataCount = 0;
 					FLAG_MotorIsMove[i] = false;
 					FL_2_Motor_Start(&Motor[i]);
 				}
@@ -490,11 +548,11 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 //						DRIVER_CTRL_OFF;
 						GLB_TypeCtrl = 0x00;
 						RegularValuePWM_PID[i] = 0;
-						if(Motor[i].md_EnableFeedBack == true)
-						{
-							CDC_Transmit_FS((uint8_t*)SpeedAngleMas, Motor[i].md_CountDataToRecv * 2);	 // 2 because data is uint16_t type
-							Motor[i].md_CountDataToRecv = 0;
-						}
+//						if(Motor[i].md_EnableFeedBack == true)
+//						{
+//							CDC_Transmit_FS((uint8_t*)FeedBackData, Motor[i].md_CountFeedBackData * 2);	 // 2 because data is uint16_t type
+//							Motor[i].md_CountFeedBackData = 0;
+//						}
 						FLAG_MotorIsMove[i] = false;
 
 					}
