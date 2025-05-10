@@ -367,8 +367,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 					if(LimitCNT[i] > 300)
 					{
 						RegularValuePWM_PID[i] += 10;
-						if(Motor[i].md_rotsd == LEFT) FL_2_Motor_SetDuty(&Motor[i], RegularValuePWM_PID[i], 0);
-						else if(Motor[i].md_rotsd == RIGHT) FL_2_Motor_SetDuty(&Motor[i], 0, RegularValuePWM_PID[i]);
+						if(Motor[i].md_rotsd == Motor[i].Encoder.side[0]) FL_2_Motor_SetDuty(&Motor[i], RegularValuePWM_PID[i], 0);
+						else if(Motor[i].md_rotsd == Motor[i].Encoder.side[1]) FL_2_Motor_SetDuty(&Motor[i], 0, RegularValuePWM_PID[i]);
 
 						SpeedAngleMas[Motor[i].md_CountDataToRecv] = RegularValuePWM_PID[i];
 						Motor[i].md_CountDataToRecv++;
@@ -455,13 +455,13 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 					FLAG_MotorIsMove[i] = false;
 					FL_2_Motor_Start(&Motor[i]);
 				}
-				else if ((Motor[i].md_st == WORKING) && /*(GLB_Time[2] < Motor[i].md_FL2_stopWorkTime) &&*/ (Motor[i].md_encod_sn.cnt < (Motor[i].md_FL2_Angle / 1.5)))
+				else if ((Motor[i].md_st == WORKING) && /*(GLB_Time[2] < Motor[i].md_FL2_stopWorkTime) &&*/ (Motor[i].Encoder.CNT < (Motor[i].md_FL2_Angle / 1.5)))
 				{
 //					FL_2_Motor_ContinuousDuty(&Motor[i]);
 
 				}
 				else if (/*((Motor[i].md_st == WORKING) && (GLB_Time[2] >= Motor[i].md_FL2_stopWorkTime))
-						|| */((Motor[i].md_encod_sn.cnt > (Motor[i].md_FL2_Angle / 1.5)) && ((Motor[i].md_FL2_Angle / 1.5) != 0)))
+						|| */((Motor[i].Encoder.CNT > (Motor[i].md_FL2_Angle / 1.5)) && ((Motor[i].md_FL2_Angle / 1.5) != 0)))
 				{
 					FL_2_Motor_Stop(&Motor[i]);
 					if(CheckStateAllMotor() == FINISH)

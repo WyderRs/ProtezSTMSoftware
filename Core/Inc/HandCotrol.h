@@ -31,12 +31,26 @@
 #define PR_TIM9_OFF	HAL_TIM_Base_Stop_IT(&htim9)
 
 
+#define ENC_GPIO_1	GPIOB
+#define ENC_PIN_1	GPIO_PIN_10
+#define ENC_GPIO_2	GPIOB
+#define ENC_PIN_2	GPIO_PIN_14
+#define ENC_GPIO_3	GPIOB
+#define ENC_PIN_3	GPIO_PIN_13
+#define ENC_GPIO_4	GPIOC
+#define ENC_PIN_4	GPIO_PIN_5
+#define ENC_GPIO_5	GPIOC
+#define ENC_PIN_5	GPIO_PIN_3
+#define ENC_GPIO_6	GPIOC
+#define ENC_PIN_6	GPIO_PIN_1
+
+
 #define SUP_ENC_GPIO_1	GPIOB
 #define SUP_ENC_PIN_1	GPIO_PIN_2
 #define SUP_ENC_GPIO_2	GPIOB
 #define SUP_ENC_PIN_2	GPIO_PIN_15
 #define SUP_ENC_GPIO_3	GPIOB
-#define SUP_ENC_PIN_3	GPIO_PIN_13
+#define SUP_ENC_PIN_3	GPIO_PIN_12
 #define SUP_ENC_GPIO_4	GPIOC
 #define SUP_ENC_PIN_4	GPIO_PIN_4
 #define SUP_ENC_GPIO_5	GPIOC
@@ -51,6 +65,10 @@
 #define FL_EXTERN_PLATE	0x01
 
 #define FL_CURRENT_PLATE 0x00	////////////////////////////////////// WARINING!!!!
+
+
+#define	PID_MAX_VAL	1000
+#define PID_MIN_VAL	50
 
 
 /*
@@ -100,14 +118,15 @@ typedef enum ChannelOut
 	CHANNEL_3 = TIM_CHANNEL_3,
 	CHANNEL_4 = TIM_CHANNEL_4,
 } ChannelOut;
-typedef enum MotorMoveState
+typedef enum MoveState
 {
 	FREE = 0,
 	LEFT,
 	RIGHT,
 	HOLD,
-	ANGLE_MODE,
-} MotorMoveState;
+//	ANGLE_MODE,
+} MoveState;
+
 typedef enum MotorState
 {
 	RELEASED = 0,				// No working, no configurated
@@ -130,14 +149,7 @@ typedef enum TypeOperationMode
 //	_Bool ValueChannel;
 //
 //} MotorFlagParam;
-typedef struct EncoderSens
-{
-	uint32_t cnt;
-	MotorMoveState dir;
-	GPIO_TypeDef *GPIOsupSens;
-	uint16_t PINsupSens;
 
-} EncoderSens;
 typedef struct StatusParam
 {
 	_Bool pwm_cnfg;
@@ -150,13 +162,28 @@ typedef struct StatusParam
 	_Bool fl2_speed;
 	_Bool fl2_delay;
 } StatusParam;
+typedef struct EncoderDefinition
+{
+	GPIO_TypeDef *GPIO;
+	uint16_t PIN;
+	GPIO_TypeDef *GPIOsup;
+	uint16_t PINsup;
+
+
+
+	MoveState side[2];
+	MoveState SideNow;
+	uint32_t CNT;
+
+} EncoderDefinition;
+
 typedef struct MotorDefinition
 {
 	TIM_HandleTypeDef *md_htim;		// TIM
 	PairChannelOut md_prch;			// Pair channels
 	ChannelOut md_chl;				// First out channel
 	ChannelOut md_chr;				// Second out channel
-	MotorMoveState md_rotsd;		// State motor
+	MoveState md_rotsd;		// State motor
 	uint32_t md_chl_value;			// Value PWM count (CCRN)
 	uint32_t md_chr_value;			// Value PWM count (CCRN)
 	MotorState md_st;				// State now
@@ -164,7 +191,7 @@ typedef struct MotorDefinition
 	uint16_t md_delayTime;			// Time delay before start work instruction
 	uint16_t md_startWorkTime;		// Tick 0.01s for to start work
 	uint16_t md_stopWorkTime;		// Tick 0.01s for to stop work
-	EncoderSens md_encod_sn;		// Encode sensor
+	EncoderDefinition Encoder;		// Motor`s Encoder
 	_Bool EnableADC;				// Enable adc conversion
 
 	StatusParam md_stParam;
@@ -188,10 +215,11 @@ typedef struct MotorDefinition
 
 	TypeOperationMode TOM;
 	NumMotor md_NMotor;
-	MotorMoveState md_rotsd_now;
+	MoveState md_rotsd_now;
 
 //	MotorFlagParam md_ConfigSettingsParam;	// Flags init parameters
 } MotorDefinition;
+
 typedef struct PRGlbDef
 {
 	uint8_t NumMotorConfigured;
@@ -239,6 +267,8 @@ void FL_1_Motor_SetDuty(MotorDefinition *motor, uint32_t duty_l, uint32_t duty_r
 void FL_2_Motor_SetDuty(MotorDefinition *motor, uint32_t duty_l, uint32_t duty_r);
 void FL_1_Motor_SetTimeSettings(MotorDefinition *motor);
 void FL_2_Motor_SetTimeSettings(MotorDefinition *motor);
+void Motor_SettingsEncoder(MotorDefinition *motor, GPIO_TypeDef *gpio, uint16_t gpio_pin);
+void Motor_SettingsSupEncoder(MotorDefinition *motor, GPIO_TypeDef *gpio, uint16_t gpio_pin, _Bool sideInvert);
 void HandProtezRecvInstructionCorrectToReverse(uint8_t *package, uint32_t count);
 void HandProtezRecvInstruction(uint8_t *package, uint32_t count);
 void PR_ADC_Init(uint32_t nomps);

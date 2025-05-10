@@ -20,9 +20,8 @@ uint32_t drts_2 = 0; 						// Number data ready to send from other plate
 uint32_t dstc = 0; 						// Number data sent to COM
 uint32_t num_pack = 20; 				// Number data to send to 1 tick
 MotorDefinition Motor[6];				// Structure of Motors
-MotorDefinition MotorOther[6];			// Structure of External Motors (other plate)
+MotorDefinition MotorOther[6];			// Structure of External Motors (other plate)a
 PRGlbDef ProtezGlobalConf;				// Global definitions
-EncoderSens Encoder[6];					// Encoder sensors parameters
 RCV_Flags FlagsRecvInst;				// Flags of received instruction
 uint32_t NowCountPointADC;				// Count point of ADC data
 uint32_t glb_dstc;						// ALL Transmited data			DELETE
@@ -134,7 +133,29 @@ MotorDefinition Motor_Settings(TIM_HandleTypeDef *htim, PairChannelOut prch,_Boo
 	motor.md_prch = prch;
 	return motor;
 }
+void Motor_SettingsEncoder(MotorDefinition *motor, GPIO_TypeDef *gpio, uint16_t gpio_pin)
+{
+	motor->Encoder.GPIO = gpio;
+	motor->Encoder.PIN = gpio_pin;
 
+}
+void Motor_SettingsSupEncoder(MotorDefinition *motor, GPIO_TypeDef *gpio, uint16_t gpio_pin, _Bool sideInvert)
+{
+	motor->Encoder.GPIOsup = gpio;
+	motor->Encoder.PINsup = gpio_pin;
+
+	if(!sideInvert)
+	{
+		motor->Encoder.side[0] = LEFT;
+		motor->Encoder.side[1] = RIGHT;
+	}
+	else
+	{
+		motor->Encoder.side[0] = RIGHT;
+		motor->Encoder.side[1] = LEFT;
+	}
+	motor->Encoder.SideNow = FREE;
+}
 void FL_1_Motor_SetDuty(MotorDefinition *motor, uint32_t duty_l, uint32_t duty_r)
 {
 	motor->md_chl_value = duty_l;
@@ -230,7 +251,7 @@ void FL_1_Motor_Start(MotorDefinition *motor)
 void FL_2_Motor_Start(MotorDefinition *motor)
 {
 	DRIVER_CTRL_ON;
-	motor->md_encod_sn.cnt = 0;
+	motor->Encoder.CNT = 0;
 	Motor[0].md_CountDataToRecv = 0;
 	motor->md_FL2_NowAngle = 0;
 	EncTime[0] = 0;
@@ -284,7 +305,7 @@ void FL_2_Motor_Stop(MotorDefinition *motor)
 //	motor->md_encod_sn.cnt = 0;
 	motor->md_FL2_Speed = 0;
 	motor->md_FL2_Time = 0;
-	motor->md_encod_sn.cnt = 0;
+	motor->Encoder.CNT = 0;
 
 	motor->md_stParam.fl2_angle = false;
 	motor->md_stParam.fl2_time = false;
@@ -420,20 +441,20 @@ uint8_t Rcv_FL_1_SelectMotor(uint8_t byte)
 {
 	return byte;
 }
-MotorMoveState Rcv_FL_1_SelectMotorDir(uint8_t byte, uint8_t num_mot)
+MoveState Rcv_FL_1_SelectMotorDir(uint8_t byte, uint8_t num_mot)
 {
-	MotorMoveState dir_st;
+	MoveState dir_st;
 	if(byte == 0x00) dir_st = FREE;
 	else if(byte == 0x01) dir_st = LEFT;
 	else if(byte == 0x02) dir_st = RIGHT;
 	else if(byte == 0x03) dir_st = HOLD;
-	else if(byte == 0x03) dir_st = ANGLE_MODE;
+//	else if(byte == 0x03) dir_st = ANGLE_MODE;
 
 	Motor[num_mot].md_rotsd = dir_st;
 	Motor[num_mot].md_stParam.dir_cnf = true;
 	return dir_st;
 }
-void Rcv_FL_1_SetPwm(uint8_t byte, uint8_t num_motor, MotorMoveState dr)
+void Rcv_FL_1_SetPwm(uint8_t byte, uint8_t num_motor, MoveState dr)
 {
 	if(byte > 0x64) byte = 0x64;
 	if(dr == FREE) FL_1_Motor_SetDuty(&Motor[num_motor], 0, 0);
@@ -502,14 +523,14 @@ uint8_t Rcv_FL_2_SelectMotor(uint8_t byte)
 {
 	return byte;
 }
-MotorMoveState Rcv_FL_2_SelectMotorDir(uint8_t byte, uint8_t num_mot)
+MoveState Rcv_FL_2_SelectMotorDir(uint8_t byte, uint8_t num_mot)
 {
-	MotorMoveState dir_st;
+	MoveState dir_st;
 	if(byte == 0x00) dir_st = FREE;
 	else if(byte == 0x01) dir_st = LEFT;
 	else if(byte == 0x02) dir_st = RIGHT;
 	else if(byte == 0x03) dir_st = HOLD;
-	else if(byte == 0x03) dir_st = ANGLE_MODE;
+//	else if(byte == 0x03) dir_st = ANGLE_MODE;
 
 	Motor[num_mot].md_rotsd = dir_st;
 	Motor[num_mot].md_rotsd_now = dir_st;
@@ -745,7 +766,7 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 {
 	uint8_t SubPackNum = 0;
 	uint8_t num_motor = 0;
-	MotorMoveState dir = FREE;
+	MoveState dir = FREE;
 	FlagsRecvInst = Rcv_ChechFlags(package);
 	SubPackNum += 2;
 	/*--------------------------CURRENT PLATE--------------------------*/
@@ -1147,11 +1168,12 @@ void ProtezInit(void)
 	ProtezGlobalConf.NumMotorConfigured = 6;
 	/*Motor definition*/
 	Motor[0] = Motor_Settings(&htim3, PAIRCHANNEL_2, true);	// CH1
-	Motor[1] = Motor_Settings(&htim4, PAIRCHANNEL_1, false);	// CH2
+	Motor[1] = Motor_Settings(&htim4, PAIRCHANNEL_1, true);	// CH2
 	Motor[2] = Motor_Settings(&htim4, PAIRCHANNEL_2, false);	// CH3
 	Motor[3] = Motor_Settings(&htim1, PAIRCHANNEL_1, false);	// CH4
 	Motor[4] = Motor_Settings(&htim3, PAIRCHANNEL_1, false);	// CH5
 	Motor[5] = Motor_Settings(&htim5, PAIRCHANNEL_1, false);	// CH6
+
 	for(uint8_t i = 0; i < 6; i++)
 	{
 		Motor[i].md_NMotor = i;
@@ -1174,7 +1196,6 @@ void ProtezInit(void)
 	Motor[5].md_htim->Instance->CCR1 = 0;
 	Motor[5].md_htim->Instance->CCR2 = 0;
 
-
 	/*ADC channels definition*/
 	ADC_Setchannel(0, ADC_CHANNEL_5);
 	ADC_Setchannel(1, ADC_CHANNEL_3);
@@ -1182,27 +1203,22 @@ void ProtezInit(void)
 	ADC_Setchannel(3, ADC_CHANNEL_2);
 	ADC_Setchannel(4, ADC_CHANNEL_7);
 	ADC_Setchannel(5, ADC_CHANNEL_6);
-	/*Encoder parameters*/
-	Motor[0].md_encod_sn = Encoder[0]; 		// CH1
-	Motor[1].md_encod_sn = Encoder[1]; 		// CH2
-	Motor[2].md_encod_sn = Encoder[2]; 		// CH3
-	Motor[3].md_encod_sn = Encoder[3]; 		// CH4
-	Motor[4].md_encod_sn = Encoder[4]; 		// CH5
-	Motor[5].md_encod_sn = Encoder[5]; 		// CH6
-	/*Support pin encoder parameters*/
-	Motor[0].md_encod_sn.GPIOsupSens = SUP_ENC_GPIO_1;
-	Motor[0].md_encod_sn.PINsupSens = SUP_ENC_PIN_1;
-	Motor[1].md_encod_sn.GPIOsupSens = SUP_ENC_GPIO_2;
-	Motor[1].md_encod_sn.PINsupSens = SUP_ENC_PIN_2;
-	Motor[2].md_encod_sn.GPIOsupSens = SUP_ENC_GPIO_3;
-	Motor[2].md_encod_sn.PINsupSens = SUP_ENC_PIN_3;
-	Motor[3].md_encod_sn.GPIOsupSens = SUP_ENC_GPIO_4;
-	Motor[3].md_encod_sn.PINsupSens = SUP_ENC_PIN_4;
-	Motor[4].md_encod_sn.GPIOsupSens = SUP_ENC_GPIO_5;
-	Motor[4].md_encod_sn.PINsupSens = SUP_ENC_PIN_5;
-	Motor[5].md_encod_sn.GPIOsupSens = SUP_ENC_GPIO_6;
-	Motor[5].md_encod_sn.PINsupSens = SUP_ENC_PIN_6;
 
+	/*Encoder parameters*/
+
+	Motor_SettingsEncoder(&Motor[0], ENC_GPIO_1, ENC_PIN_1); // CH1
+	Motor_SettingsEncoder(&Motor[1], ENC_GPIO_2, ENC_PIN_2); // CH2
+	Motor_SettingsEncoder(&Motor[2], ENC_GPIO_3, ENC_PIN_3); // CH3
+	Motor_SettingsEncoder(&Motor[3], ENC_GPIO_4, ENC_PIN_4); // CH4
+	Motor_SettingsEncoder(&Motor[4], ENC_GPIO_5, ENC_PIN_5); // CH5
+	Motor_SettingsEncoder(&Motor[5], ENC_GPIO_6, ENC_PIN_6); // CH6
+
+	Motor_SettingsSupEncoder(&Motor[0], SUP_ENC_GPIO_1, SUP_ENC_PIN_1, false); // CH1
+	Motor_SettingsSupEncoder(&Motor[1], SUP_ENC_GPIO_2, SUP_ENC_PIN_2, true); // CH2
+	Motor_SettingsSupEncoder(&Motor[2], SUP_ENC_GPIO_3, SUP_ENC_PIN_3, false); // CH3
+	Motor_SettingsSupEncoder(&Motor[3], SUP_ENC_GPIO_4, SUP_ENC_PIN_4, false); // CH4
+	Motor_SettingsSupEncoder(&Motor[4], SUP_ENC_GPIO_5, SUP_ENC_PIN_5, false); // CH5
+	Motor_SettingsSupEncoder(&Motor[5], SUP_ENC_GPIO_6, SUP_ENC_PIN_6, true); // CH6
 
 }
 void StartMeasurement(void)
