@@ -15,6 +15,7 @@ uint32_t TEST_cntTim2 = 0;				// Test variables (counter TIM2)
 uint8_t ADC_Data[500] = {0, };			// Data received from ADC
 uint8_t FeedBackData[500];				// FeedBack Data
 uint32_t FeedBackDataCount;				// Count FeedBack Data
+uint32_t FeedBackDataCount2[6];
 uint32_t ADC_Channels[6] = {0, };		// Number ADC channels
 uint32_t drts = 0; 						// Number data ready to send
 uint32_t drts_2 = 0; 						// Number data ready to send from other plate
@@ -159,40 +160,91 @@ void Motor_SettingsSupEncoder(MotorDefinition *motor, GPIO_TypeDef *gpio, uint16
 }
 void FL_1_Motor_SetDuty(MotorDefinition *motor, uint32_t duty_l, uint32_t duty_r)
 {
-	motor->md_chl_value = duty_l;
-	motor->md_chr_value = duty_r;
+
 	if(motor->md_prch == PAIRCHANNEL_1)
 	{
-		if(motor->md_chl == CHANNEL_1) motor->md_htim->Instance->CCR1 = duty_l;
-		else if(motor->md_chl == CHANNEL_2) motor->md_htim->Instance->CCR1 = duty_r;
-		if(motor->md_chr == CHANNEL_2) motor->md_htim->Instance->CCR2 = duty_r;
-		else if(motor->md_chr == CHANNEL_1) motor->md_htim->Instance->CCR2 = duty_l;
+		if((motor->md_chl == CHANNEL_1) && (motor->md_chr == CHANNEL_2))
+		{
+			motor->md_chl_value = duty_l;
+			motor->md_htim->Instance->CCR1 = duty_l;
+			motor->md_chr_value = duty_r;
+			motor->md_htim->Instance->CCR2 = duty_r;
+		}
+		else if((motor->md_chl == CHANNEL_2) && (motor->md_chr == CHANNEL_1))
+		{
+			motor->md_chl_value = duty_r;
+			motor->md_htim->Instance->CCR1 = duty_r;
+			motor->md_chr_value = duty_l;
+			motor->md_htim->Instance->CCR2 = duty_l;
+		}
 	}
 	else if(motor->md_prch == PAIRCHANNEL_2)
 	{
-		if(motor->md_chl == CHANNEL_3) motor->md_htim->Instance->CCR3 = duty_l;
-		else if(motor->md_chl == CHANNEL_4) motor->md_htim->Instance->CCR3 = duty_r;
-		if(motor->md_chr == CHANNEL_4) motor->md_htim->Instance->CCR4 = duty_r;
-		else if(motor->md_chr == CHANNEL_3) motor->md_htim->Instance->CCR4 = duty_l;
+		if((motor->md_chl == CHANNEL_3) && (motor->md_chr == CHANNEL_4))
+		{
+			motor->md_chl_value = duty_l;
+			motor->md_htim->Instance->CCR1 = duty_l;
+			motor->md_chr_value = duty_r;
+			motor->md_htim->Instance->CCR2 = duty_r;
+		}
+		else if((motor->md_chl == CHANNEL_4) && (motor->md_chr == CHANNEL_3))
+		{
+			motor->md_chl_value = duty_r;
+			motor->md_htim->Instance->CCR1 = duty_r;
+			motor->md_chr_value = duty_l;
+			motor->md_htim->Instance->CCR2 = duty_l;
+		}
 	}
 }
 void FL_2_Motor_SetDuty(MotorDefinition *motor, uint32_t duty_l, uint32_t duty_r)
 {
-	motor->md_chl_value = duty_l;
-	motor->md_chr_value = duty_r;
+
 	if(motor->md_prch == PAIRCHANNEL_1)
 	{
-		if(motor->md_chl == CHANNEL_1) motor->md_htim->Instance->CCR1 = duty_l;
-		else if(motor->md_chl == CHANNEL_2) motor->md_htim->Instance->CCR1 = duty_r;
-		if(motor->md_chr == CHANNEL_2) motor->md_htim->Instance->CCR2 = duty_r;
-		else if(motor->md_chr == CHANNEL_1) motor->md_htim->Instance->CCR2 = duty_l;
+		if(motor->md_chl == CHANNEL_1)
+		{
+			motor->md_chl_value = duty_l;
+			motor->md_htim->Instance->CCR1 = duty_l;
+		}
+		else if(motor->md_chl == CHANNEL_2)
+		{
+			motor->md_chl_value = duty_l;
+			motor->md_htim->Instance->CCR1 = duty_r;
+		}
+
+		if(motor->md_chr == CHANNEL_2)
+		{
+			motor->md_chr_value = duty_r;
+			motor->md_htim->Instance->CCR2 = duty_r;
+		}
+		else if(motor->md_chr == CHANNEL_1)
+		{
+			motor->md_chr_value = duty_r;
+			motor->md_htim->Instance->CCR2 = duty_l;
+		}
 	}
 	else if(motor->md_prch == PAIRCHANNEL_2)
 	{
-		if(motor->md_chl == CHANNEL_3) motor->md_htim->Instance->CCR3 = duty_l;
-		else if(motor->md_chl == CHANNEL_4) motor->md_htim->Instance->CCR3 = duty_r;
-		if(motor->md_chr == CHANNEL_4) motor->md_htim->Instance->CCR4 = duty_r;
-		else if(motor->md_chr == CHANNEL_3) motor->md_htim->Instance->CCR4 = duty_l;
+		if(motor->md_chl == CHANNEL_3)
+		{
+			motor->md_chl_value = duty_l;
+			motor->md_htim->Instance->CCR3 = duty_l;
+		}
+		else if(motor->md_chl == CHANNEL_4)
+		{
+			motor->md_chl_value = duty_l;
+			motor->md_htim->Instance->CCR3 = duty_r;
+		}
+		if(motor->md_chr == CHANNEL_4)
+		{
+			motor->md_chr_value = duty_r;
+			motor->md_htim->Instance->CCR4 = duty_r;
+		}
+		else if(motor->md_chr == CHANNEL_3)
+		{
+			motor->md_chr_value = duty_r;
+			motor->md_htim->Instance->CCR4 = duty_l;
+		}
 	}
 }
 void FL_1_Motor_ContinuousDuty(MotorDefinition *motor)
@@ -261,8 +313,6 @@ void FL_2_Motor_Start(MotorDefinition *motor)
 	EncCnt[0] = 0;
 	EncCntNow[0] = 0;
 	EncCntOld[0] = 0;
-
-	RegularValuePWM_PID[motor->md_NMotor] = 0;
 
 	if(motor->md_st == WAITING)
 	{
@@ -1178,12 +1228,12 @@ void ProtezInit(void)
 	/*Global variables*/
 	ProtezGlobalConf.NumMotorConfigured = 6;
 	/*Motor definition*/
-	Motor[0] = Motor_Settings(&htim3, PAIRCHANNEL_2, true);	// CH1
-	Motor[1] = Motor_Settings(&htim4, PAIRCHANNEL_1, true);	// CH2
+	Motor[0] = Motor_Settings(&htim3, PAIRCHANNEL_2, false);	// CH1
+	Motor[1] = Motor_Settings(&htim4, PAIRCHANNEL_1, true);		// CH2
 	Motor[2] = Motor_Settings(&htim4, PAIRCHANNEL_2, false);	// CH3
 	Motor[3] = Motor_Settings(&htim1, PAIRCHANNEL_1, false);	// CH4
 	Motor[4] = Motor_Settings(&htim3, PAIRCHANNEL_1, false);	// CH5
-	Motor[5] = Motor_Settings(&htim5, PAIRCHANNEL_1, false);	// CH6
+	Motor[5] = Motor_Settings(&htim5, PAIRCHANNEL_1, true);		// CH6
 
 	for(uint8_t i = 0; i < 6; i++)
 	{

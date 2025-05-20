@@ -215,6 +215,9 @@ typedef struct MotorDefinition
 	MoveState md_rotsd_now;
 
 //	MotorFlagParam md_ConfigSettingsParam;	// Flags init parameters
+
+	uint8_t md_FeedBackData[100];
+	_Bool md_FeedBackDataFlag;
 } MotorDefinition;
 
 typedef struct PRGlbDef

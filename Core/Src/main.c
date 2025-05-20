@@ -36,6 +36,7 @@
 extern uint8_t ADC_Data[500];
 extern uint8_t FeedBackData[500];
 extern uint32_t FeedBackDataCount;
+extern uint32_t FeedBackDataCount2[6];
 extern uint32_t drts;
 extern uint32_t dstc;
 extern MotorDefinition Motor[6];
@@ -76,9 +77,6 @@ extern uint32_t num_pack;
 extern _Bool TransmitDataFlags[2];
 uint32_t UsartDataCnt22 = 0;
 
-
-
-uint32_t FeedBackDataCount_TEST;
 
 
 
@@ -168,8 +166,8 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_ADC1_Init();
-  MX_TIM2_Init();
+//  MX_ADC1_Init();
+//  MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_TIM5_Init();
@@ -1156,7 +1154,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 	//-----------------------------------------------------------------------------------------------------------------------------------//
 	/*Encoder Motor #1*/
-	uint8_t j = 0;
 	for(uint8_t i = 0; i < 6; i++)
 	{
 		if(GPIO_Pin == Motor[i].Encoder.PIN)
@@ -1178,24 +1175,57 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
 
 
-						int16_t temp = RegularValuePWM_PID[i] + (int16_t)(RegVal_PID[i]);
+						uint16_t temp = RegularValuePWM_PID[i] + (int16_t)(RegVal_PID[i]);
 						if(temp >= PID_MAX_VAL) RegularValuePWM_PID[i] = PID_MAX_VAL;
 						else if(temp <= PID_MIN_VAL) RegularValuePWM_PID[i] = PID_MIN_VAL;
 						else RegularValuePWM_PID[i] = temp;
 
 
+						Motor[i].md_FeedBackData[FeedBackDataCount2[i]] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
+						Motor[i].md_FeedBackData[FeedBackDataCount2[i] + 1] = (uint8_t)((RegularValuePWM_PID[i] & 0xFF00) >> 8);
 
-						FeedBackData[j * num_pack * 2 + FeedBackDataCount] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
-						FeedBackData[(j * num_pack * 2) + FeedBackDataCount + 1] = (uint8_t)(RegularValuePWM_PID[i] & 0xFF00) >> 8;
+//						FeedBackData[(j * num_pack * 2) + FeedBackDataCount2[i]] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
+//						FeedBackData[(j * num_pack * 2) + FeedBackDataCount2[i] + 1] = (uint8_t)((RegularValuePWM_PID[i] & 0xFF00) >> 8);
+
+
+						FeedBackDataCount2[i] += 2;
 						FeedBackDataCount += 2;
-						FeedBackDataCount_TEST += 2;
 
-						if(FeedBackDataCount >= 2 * num_pack * ProtezGlobalConf.md_countMotorFeedBackEnable[0])
+						if(FeedBackDataCount2[i] >= 2 * num_pack)
+						{
+							for(uint8_t t = 0; t < 2 * num_pack; t++)
+							{
+								FeedBackData[i * num_pack * 2 + t] = Motor[i].md_FeedBackData[t];
+							}
+							FeedBackDataCount2[i] = 0;
+							Motor[i].md_FeedBackDataFlag = true;
+						}
+
+						_Bool common_flag = true;
+						for(uint8_t t = 0; t < ProtezGlobalConf.md_countMotorFeedBackEnable[0]; t++)
+						{
+							common_flag = common_flag & Motor[i].md_FeedBackDataFlag;
+						}
+						if(common_flag)
 						{
 							FeedBackDataCount = 0;
+							FeedBackDataCount2[i] = 0;
 							TransmitDataFlags[0] = true;
+
+							for(uint8_t t = 0; t < ProtezGlobalConf.md_countMotorFeedBackEnable[0]; t++)
+							{
+								Motor[i].md_FeedBackDataFlag = false;
+							}
 						}
-						j++;
+
+
+
+//						if(FeedBackDataCount >= 2 * num_pack * ProtezGlobalConf.md_countMotorFeedBackEnable[0])
+//						{
+//							FeedBackDataCount = 0;
+//							FeedBackDataCount2[i] = 0;
+//							TransmitDataFlags[0] = true;
+//						}
 
 
 					}
@@ -1244,28 +1274,54 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
 
 
-						int16_t temp = RegularValuePWM_PID[i] + (int16_t)(RegVal_PID[i]);
+						uint16_t temp = RegularValuePWM_PID[i] + (int16_t)(RegVal_PID[i]);
 						if(temp >= PID_MAX_VAL) RegularValuePWM_PID[i] = PID_MAX_VAL;
 						else if(temp <= PID_MIN_VAL) RegularValuePWM_PID[i] = PID_MIN_VAL;
 						else RegularValuePWM_PID[i] = temp;
 
 
+//						FeedBackData[j * num_pack * 2 + FeedBackDataCount2[i]] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
+//						FeedBackData[(j * num_pack * 2) + FeedBackDataCount2[i] + 1] = (uint8_t)((RegularValuePWM_PID[i] & 0xFF00) >> 8);
+
+						Motor[i].md_FeedBackData[FeedBackDataCount2[i]] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
+						Motor[i].md_FeedBackData[FeedBackDataCount2[i] + 1] = (uint8_t)((RegularValuePWM_PID[i] & 0xFF00) >> 8);
 
 
-
-						FeedBackData[j * num_pack * 2 + FeedBackDataCount] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
-						FeedBackData[(j * num_pack * 2) + FeedBackDataCount + 1] = (uint8_t)(RegularValuePWM_PID[i] & 0xFF00) >> 8;
+						FeedBackDataCount2[i] += 2;
 						FeedBackDataCount += 2;
-						FeedBackDataCount_TEST += 2;
 
-						if(FeedBackDataCount >= 2 * num_pack * ProtezGlobalConf.md_countMotorFeedBackEnable[0])
+						if(FeedBackDataCount2[i] >= 2 * num_pack)
+						{
+							for(uint8_t t = 0; t < 2 * num_pack; t++)
+							{
+								FeedBackData[i * num_pack * 2 + t] = Motor[i].md_FeedBackData[t];
+							}
+							FeedBackDataCount2[i] = 0;
+							Motor[i].md_FeedBackDataFlag = true;
+						}
+
+						_Bool common_flag = true;
+						for(uint8_t t = 0; t < ProtezGlobalConf.md_countMotorFeedBackEnable[0]; t++)
+						{
+							common_flag = common_flag & Motor[i].md_FeedBackDataFlag;
+						}
+						if(common_flag)
 						{
 							FeedBackDataCount = 0;
+							FeedBackDataCount2[i] = 0;
 							TransmitDataFlags[0] = true;
+
+							for(uint8_t t = 0; t < ProtezGlobalConf.md_countMotorFeedBackEnable[0]; t++)
+							{
+								Motor[i].md_FeedBackDataFlag = false;
+							}
 						}
-						j++;
-
-
+//						if(FeedBackDataCount >= 2 * num_pack * ProtezGlobalConf.md_countMotorFeedBackEnable[0])
+//						{
+//							FeedBackDataCount = 0;
+//							FeedBackDataCount2[i] = 0;
+//							TransmitDataFlags[0] = true;
+//						}
 
 					}
 

@@ -38,6 +38,7 @@ extern uint32_t drts;
 extern uint8_t ADC_Data[500];
 extern uint8_t FeedBackData[500];
 extern uint32_t FeedBackDataCount;
+extern uint32_t FeedBackDataCount2[6];
 extern uint16_t RegularValuePWM_PID[6];
 extern bool FLAG_MotorIsMove[6];
 uint16_t count_last_bytes;
@@ -67,10 +68,6 @@ extern uint32_t drts_2;
 extern uint8_t UsartData[120];
 
 
-
-
-
-extern uint32_t FeedBackDataCount_TEST;
 
 /* USER CODE END TD */
 
@@ -351,19 +348,6 @@ void TIM1_BRK_TIM9_IRQHandler(void)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 //			uint32_t Target_dtsc_temp = 0;
 //			for(uint8_t ii = 0; ii < ProtezGlobalConf.NumMotorConfigured; ii++) Target_dtsc_temp += Target_dtsc[ii];
 //			if(((Target_dtsc_temp - glb_dstc) > 0) && ((Target_dtsc_temp - glb_dstc) <Target_dtsc_temp))	// Device not undelivered data
@@ -399,7 +383,6 @@ void TIM1_BRK_TIM9_IRQHandler(void)
 void TIM1_UP_TIM10_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
-	uint8_t j = 0;
 	for(uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
 	{
 		if(Motor[i].TOM == WRM_ANGLE_MODE)
@@ -417,24 +400,61 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						else if(Motor[i].md_rotsd == Motor[i].Encoder.side[1]) FL_2_Motor_SetDuty(&Motor[i], 0, RegularValuePWM_PID[i]);
 
 
-						FeedBackData[j * num_pack * 2 + FeedBackDataCount] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
-						FeedBackData[(j * num_pack * 2) + FeedBackDataCount + 1] = (uint8_t)(RegularValuePWM_PID[i] & 0xFF00) >> 8;
-						FeedBackDataCount += 2;
-						FeedBackDataCount_TEST += 2;
+//						FeedBackData[j * num_pack * 2 + FeedBackDataCount2[i]] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
+//						FeedBackData[(j * num_pack * 2) + FeedBackDataCount2[i] + 1] = (uint8_t)((RegularValuePWM_PID[i] & 0xFF00) >> 8);
 
-						if(FeedBackDataCount >= 2 * num_pack * ProtezGlobalConf.md_countMotorFeedBackEnable[0])
+
+						Motor[i].md_FeedBackData[FeedBackDataCount2[i]] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
+						Motor[i].md_FeedBackData[FeedBackDataCount2[i] + 1] = (uint8_t)((RegularValuePWM_PID[i] & 0xFF00) >> 8);
+
+
+						FeedBackDataCount += 2;
+						FeedBackDataCount2[i] += 2;
+
+
+						if(FeedBackDataCount2[i] >= 2 * num_pack)
 						{
-							FeedBackDataCount = 0;
-							TransmitDataFlags[0] = true;
+							for(uint8_t t = 0; t < 2 * num_pack; t++)
+							{
+								FeedBackData[i * num_pack * 2 + t] = Motor[i].md_FeedBackData[t];
+							}
+							FeedBackDataCount2[i] = 0;
+							Motor[i].md_FeedBackDataFlag = true;
 						}
 
-						j++;
+						_Bool common_flag = true;
+						for(uint8_t t = 0; t < ProtezGlobalConf.md_countMotorFeedBackEnable[0]; t++)
+						{
+							common_flag = common_flag & Motor[i].md_FeedBackDataFlag;
+						}
+						if(common_flag)
+						{
+							FeedBackDataCount = 0;
+							FeedBackDataCount2[i] = 0;
+							TransmitDataFlags[0] = true;
+
+							for(uint8_t t = 0; t < ProtezGlobalConf.md_countMotorFeedBackEnable[0]; t++)
+							{
+								Motor[i].md_FeedBackDataFlag = false;
+							}
+
+						}
+
+
+//						if(FeedBackDataCount >= 2 * num_pack * ProtezGlobalConf.md_countMotorFeedBackEnable[0])
+//						{
+//							FeedBackDataCount = 0;
+//							FeedBackDataCount2[i] = 0;
+//							TransmitDataFlags[0] = true;
+//						}
+
 						LimitCNT[i] = 0;
 					}
 				}
 				FLAG_MotorIsMove[i] = false;
 			}
 		}
+
 	}
 
 
@@ -509,6 +529,8 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 			{
 				if ((Motor[i].md_st == WAITING) && (GLB_Time[2] >= Motor[i].md_FL2_startWorkTime))
 				{
+					RegularValuePWM_PID[i] = 0;
+					FeedBackData[i] = 0;
 					FeedBackDataCount = 0;
 					FLAG_MotorIsMove[i] = false;
 					FL_2_Motor_Start(&Motor[i]);
@@ -543,9 +565,9 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 //							}
 //						}
 //						StopMeasurement();
-//						ProtezGlobalConf.ADC_ChannelsEnable = false;
+						ProtezGlobalConf.FeedBack = false;
 
-//						DRIVER_CTRL_OFF;
+						DRIVER_CTRL_OFF;
 						GLB_TypeCtrl = 0x00;
 						RegularValuePWM_PID[i] = 0;
 //						if(Motor[i].md_EnableFeedBack == true)
@@ -554,7 +576,6 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 //							Motor[i].md_CountFeedBackData = 0;
 //						}
 						FLAG_MotorIsMove[i] = false;
-
 					}
 				}
 
