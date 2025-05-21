@@ -13,10 +13,10 @@
 ../Core/Src/stm32f4xx_it.c:297:6:TIM1_BRK_TIM9_IRQHandler	24	static
 ../Core/Src/stm32f4xx_it.c:383:6:TIM1_UP_TIM10_IRQHandler	24	static
 ../Core/Src/stm32f4xx_it.c:472:6:TIM1_TRG_COM_TIM11_IRQHandler	32	static
-../Core/Src/stm32f4xx_it.c:608:6:TIM2_IRQHandler	8	static
-../Core/Src/stm32f4xx_it.c:627:6:EXTI15_10_IRQHandler	8	static
-../Core/Src/stm32f4xx_it.c:643:6:DMA2_Stream0_IRQHandler	8	static
-../Core/Src/stm32f4xx_it.c:657:6:DMA2_Stream1_IRQHandler	8	static
-../Core/Src/stm32f4xx_it.c:671:6:OTG_FS_IRQHandler	8	static
-../Core/Src/stm32f4xx_it.c:685:6:DMA2_Stream6_IRQHandler	8	static
-../Core/Src/stm32f4xx_it.c:699:6:USART6_IRQHandler	8	static
+../Core/Src/stm32f4xx_it.c:639:6:TIM2_IRQHandler	8	static
+../Core/Src/stm32f4xx_it.c:658:6:EXTI15_10_IRQHandler	8	static
+../Core/Src/stm32f4xx_it.c:674:6:DMA2_Stream0_IRQHandler	8	static
+../Core/Src/stm32f4xx_it.c:688:6:DMA2_Stream1_IRQHandler	8	static
+../Core/Src/stm32f4xx_it.c:702:6:OTG_FS_IRQHandler	8	static
+../Core/Src/stm32f4xx_it.c:716:6:DMA2_Stream6_IRQHandler	8	static
+../Core/Src/stm32f4xx_it.c:730:6:USART6_IRQHandler	8	static

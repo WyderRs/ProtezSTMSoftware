@@ -42,6 +42,7 @@ _Bool ThisDeviceOnUsartCtrl = true;		// This device on usart control
 //*****************//
 // end-to-end (ETE MODE)
 _Bool ETEMode_Enable = false;
+_Bool ETEModeSUP_Enable = false;
 uint8_t UART_CountADC_Channel;
 
 _Bool TransmitDataFlags[2];
@@ -410,13 +411,13 @@ RCV_Flags Rcv_ChechFlags(uint8_t *package)
 		if (allpack & mask) // TimeWork byte
 		{
 			flags.FL1_TimeWork= true;
-			i++;
+			i += 2;
 		}
 		mask <<= 1;
 		if (allpack & mask) // DelayWork byte
 		{
 			flags.FL1_DelayWork= true;
-			i++;
+			i += 2;
 		}
 		mask <<= 1;
 		if (allpack & mask) // ADC byte
@@ -427,6 +428,10 @@ RCV_Flags Rcv_ChechFlags(uint8_t *package)
 		mask <<= 1;
 		if (allpack & mask) // Start instruction
 		{
+//			if(package[i] & 0x02)
+//			{
+//				FL_1_ETEMode_Enable(true);
+//			}
 			flags.FL0_StartInsruct = true;
 			i++;
 		}
@@ -450,25 +455,25 @@ RCV_Flags Rcv_ChechFlags(uint8_t *package)
 		if (allpack & mask) // Angle byte
 		{
 			flags.FL2_Angle= true;
-			i++;
+			i += 2;
 		}
 		mask <<= 1;
 		if (allpack & mask) // Time byte
 		{
 			flags.FL2_Time = true;
-			i++;
+			i += 2;
 		}
 		mask <<= 1;
 		if (allpack & mask) // Speed byte
 		{
 			flags.FL2_Speed = true;
-			i++;
+			i += 2;
 		}
 		mask <<= 1;
 		if (allpack & mask) // Delay byte
 		{
 			flags.FL2_Delay = true;
-			i++;
+			i += 2;
 		}
 		mask <<= 1;
 		if (allpack & mask) // FeedBack byte
@@ -541,6 +546,14 @@ void Rcv_FL_1_SetADC(uint8_t byte, uint8_t num_motor)
 void Rcv_FL_1_StartInstr(uint8_t byte)
 {
 	if(byte & 0x01) FL_1_HandProtezStartInstruction();
+	if(byte & 0x02)
+	{
+		FL_1_ETEMode_Enable(true);
+	}
+	else if(!(byte & 0x02))
+	{
+		FL_1_ETEMode_Enable(false);
+	}
 }
 
 void FL_1_HandProtezStartInstruction(void)
@@ -564,7 +577,11 @@ void FL_1_HandProtezStartInstruction(void)
 		}
 	}
 }
-
+void FL_1_ETEMode_Enable(_Bool state)	// Режим сквозной передачи на внешнюю сторону
+{
+	if(state) ETEMode_Enable = true;
+	else ETEMode_Enable = false;
+}
 
 
 
@@ -831,7 +848,7 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 	FlagsRecvInst = Rcv_ChechFlags(package);
 	SubPackNum += 2;
 	/*--------------------------CURRENT PLATE--------------------------*/
-	if(package[SubPackNum] == FL_CURRENT_PLATE)
+	if((package[SubPackNum] == FL_CURRENT_PLATE) || ETEModeSUP_Enable)
 	{
 		SubPackNum++;
 		if(package[SubPackNum] == FL_PWM_MODE)
@@ -839,38 +856,89 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 			SubPackNum++;
 			if(FlagsRecvInst.FL1_MotorSelect)
 			{
-				num_motor = Rcv_FL_1_SelectMotor(package[SubPackNum]);
-				Motor[num_motor].TOM = FL_PWM_MODE;
+				if(ETEMode_Enable)
+				{
+					num_motor = Rcv_FL_1_SelectMotor(package[SubPackNum]);
+					Motor[num_motor].TOM = FL_PWM_MODE;
+				}
+				else
+				{
+					num_motor = Rcv_FL_1_SelectMotor(package[SubPackNum]);
+					Motor[num_motor].TOM = FL_PWM_MODE;
+				}
+
 				SubPackNum++;
 			}
 			if(FlagsRecvInst.FL1_MotorDir)
 			{
-				dir = Rcv_FL_1_SelectMotorDir(package[SubPackNum], num_motor);
+				if(ETEMode_Enable)
+				{
+					dir = Rcv_FL_1_SelectMotorDir(package[SubPackNum], num_motor);
+				}
+				else
+				{
+					dir = Rcv_FL_1_SelectMotorDir(package[SubPackNum], num_motor);
+				}
 				SubPackNum++;
 			}
 			if(FlagsRecvInst.FL1_PWM_Set)
 			{
-				Rcv_FL_1_SetPwm(package[SubPackNum], num_motor,  dir);
+				if(ETEMode_Enable)
+				{
+					Rcv_FL_1_SetPwm(5, num_motor,  dir);
+				}
+				else
+				{
+					Rcv_FL_1_SetPwm(package[SubPackNum], num_motor,  dir);
+				}
 				SubPackNum++;
 			}
 			if(FlagsRecvInst.FL1_TimeWork)
 			{
-				Rcv_FL_1_SetTime((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				if(ETEMode_Enable)
+				{
+					Rcv_FL_1_SetTime((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				}
+				else
+				{
+					Rcv_FL_1_SetTime((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				}
 				SubPackNum += 2;
 			}
 			if(FlagsRecvInst.FL1_DelayWork)
 			{
-				Rcv_FL_1_SetDelay((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				if(ETEMode_Enable)
+				{
+					Rcv_FL_1_SetDelay((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				}
+				else
+				{
+					Rcv_FL_1_SetDelay((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				}
 				SubPackNum += 2;
 			}
 			if(FlagsRecvInst.FL1_ADC)
 			{
-				Rcv_FL_1_SetADC(package[SubPackNum], num_motor);
+				if(ETEMode_Enable)
+				{
+					Rcv_FL_1_SetADC(package[SubPackNum], num_motor);
+				}
+				else
+				{
+					Rcv_FL_1_SetADC(package[SubPackNum], num_motor);
+				}
 				SubPackNum++;
 			}
 			if(FlagsRecvInst.FL0_StartInsruct)
 			{
-				Rcv_FL_1_StartInstr(package[SubPackNum]);
+				if(ETEMode_Enable)
+				{
+					Rcv_FL_1_StartInstr(package[SubPackNum]);
+				}
+				else
+				{
+					Rcv_FL_1_StartInstr(package[SubPackNum]);
+				}
 				SubPackNum++;
 			}
 		}
@@ -879,58 +947,114 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 			SubPackNum++;
 			if(FlagsRecvInst.FL1_MotorSelect)
 			{
-				num_motor = Rcv_FL_2_SelectMotor(package[SubPackNum]);
-				Motor[num_motor].TOM = FL_ANGLE_MODE;
+				if(ETEMode_Enable)
+				{
+					num_motor = Rcv_FL_2_SelectMotor(package[SubPackNum]);
+					Motor[num_motor].TOM = FL_ANGLE_MODE;
+				}
+				else
+				{
+					num_motor = Rcv_FL_2_SelectMotor(package[SubPackNum]);
+					Motor[num_motor].TOM = FL_ANGLE_MODE;
+				}
 				SubPackNum++;
 			}
 			if(FlagsRecvInst.FL1_MotorDir)
 			{
-				dir = Rcv_FL_2_SelectMotorDir(package[SubPackNum], num_motor);
+				if(ETEMode_Enable)
+				{
+					dir = Rcv_FL_2_SelectMotorDir(package[SubPackNum], num_motor);
+				}
+				else
+				{
+					dir = Rcv_FL_2_SelectMotorDir(package[SubPackNum], num_motor);
+				}
 				SubPackNum++;
 			}
 			if(FlagsRecvInst.FL2_Angle)
 			{
-				Rcv_FL_2_SetAngle((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				if(ETEMode_Enable)
+				{
+					Rcv_FL_2_SetAngle((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				}
+				else
+				{
+					Rcv_FL_2_SetAngle((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				}
 				SubPackNum += 2;
 			}
 			if(FlagsRecvInst.FL2_Time)
 			{
-				Rcv_FL_2_SetTime((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				if(ETEMode_Enable)
+				{
+					Rcv_FL_2_SetTime((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				}
+				else
+				{
+					Rcv_FL_2_SetTime((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				}
 				SubPackNum += 2;
 			}
 			if(FlagsRecvInst.FL2_Speed)
 			{
-				Rcv_FL_2_SetSpeed((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				if(ETEMode_Enable)
+				{
+					Rcv_FL_2_SetSpeed((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				}
+				else
+				{
+					Rcv_FL_2_SetSpeed((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				}
 				SubPackNum += 2;
 			}
 			if(FlagsRecvInst.FL2_Delay)
 			{
-				Rcv_FL_2_SetDelay((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				if(ETEMode_Enable)
+				{
+					Rcv_FL_2_SetDelay((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				}
+				else
+				{
+					Rcv_FL_2_SetDelay((package[SubPackNum + 1] << 8) | (package[SubPackNum]), num_motor);
+				}
 				SubPackNum += 2;
 			}
 			if(FlagsRecvInst.FL2_FeedBack)
 			{
-				Rcv_FL_2_SetFeedBack(package[SubPackNum], num_motor);
+				if(ETEMode_Enable)
+				{
+					Rcv_FL_2_SetFeedBack(package[SubPackNum], num_motor);
+				}
+				else
+				{
+					Rcv_FL_2_SetFeedBack(package[SubPackNum], num_motor);
+				}
 				SubPackNum++;
 			}
 			if(FlagsRecvInst.FL0_StartInsruct)
 			{
-				Rcv_FL_2_StartInstr(package[SubPackNum]);
+				if(ETEMode_Enable)
+				{
+					Rcv_FL_2_StartInstr(package[SubPackNum]);
+				}
+				else
+				{
+					Rcv_FL_2_StartInstr(package[SubPackNum]);
+				}
 				SubPackNum++;
 			}
 		}
+
+		if(ETEMode_Enable && !ETEModeSUP_Enable)
+		{
+			HandProtezRecvInstructionOtherSide(FlagsRecvInst, package, count);
+			ETEModeSUP_Enable = false;
+		}
+		ETEModeSUP_Enable = false;
+		return;
 	}
 	else
 	{
-		//
-		// ИНИЦИАЛИЗИРУЕМ РЕЖИМ СКВОЗНОЙ ПЕРЕДАЧИ ПО USART
-		// НАДО РЕАЛИЗОВАТЬ: [[STM1][STM2]] С РАЗНЫМИ ПОРЦИЯМИ ОТПРАВЛЯТЬ ПО ОЧЕРЕДИ: STM1-STM2-STM1-STM2...
-		//
-//		if(ETEMode_Enable == true)
-//		{
-//
-//		}
-
 		/*--------------------------OTHER PLATE--------------------------*/
 		SubPackNum++;
 		if(package[SubPackNum] == FL_PWM_MODE)
@@ -991,6 +1115,15 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 			{
 				if(package[SubPackNum] & 0x01) {}
 
+				if(package[SubPackNum] & 0x02)
+				{
+					FL_1_ETEMode_Enable(true);
+				}
+				else if(!(package[SubPackNum] & 0x02))
+				{
+					FL_1_ETEMode_Enable(false);
+				}
+
 				uint8_t num_ch = 0;
 				_Bool MotorFlags[ProtezGlobalConf.NumMotorConfigured];
 				for(uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
@@ -1006,6 +1139,7 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 						MotorFlags[i] = false;
 					}
 				}
+
 				ProtezGlobalConf.md_countMotorADCEnable[1] = num_ch;
 				drts_2 = num_pack * num_ch;
 				SubPackNum++;
@@ -1097,9 +1231,201 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 //		HAL_UART_Transmit_IT(&huart6, (uint8_t*)FullCom, FullCom[0]);
 		HAL_UART_Transmit_DMA(&huart6, (uint8_t*)FullCom, FullCom[0]);
 		for(uint32_t w = 0; w < 100000; w++) {}		// Надо избавиться
+
+
+		if(ETEMode_Enable)
+		{
+			ETEModeSUP_Enable = true;
+			HandProtezRecvInstruction(package, count);
+		}
 	}
 }
 
+void HandProtezRecvInstructionOtherSide(RCV_Flags rcv_fl, uint8_t *package, uint32_t count)
+{
+	uint8_t SubPackNum = 0;
+	uint8_t num_motor = 0;
+	MoveState dir = FREE;
+	SubPackNum += 2;
+
+	package[SubPackNum] = FL_CURRENT_PLATE;
+	if(package[SubPackNum] == FL_CURRENT_PLATE)
+	{
+		SubPackNum++;
+		if(package[SubPackNum] == FL_PWM_MODE)
+		{
+			SubPackNum++;
+			if(rcv_fl.FL1_MotorSelect)
+			{
+				num_motor = package[SubPackNum];
+				MotorOther[num_motor].TOM = FL_PWM_MODE;
+
+				SubPackNum++;
+			}
+			if(rcv_fl.FL1_MotorDir)
+			{
+				dir = package[SubPackNum];
+				MotorOther[num_motor].md_rotsd = dir;
+				MotorOther[num_motor].md_stParam.dir_cnf = true;
+
+				SubPackNum++;
+			}
+			if(rcv_fl.FL1_PWM_Set)
+			{
+				/* Not set PWM value */
+				MotorOther[num_motor].md_stParam.pwm_cnfg = true;
+				package[SubPackNum] = 6;
+
+				SubPackNum++;
+			}
+			if(rcv_fl.FL1_TimeWork)
+			{
+				uint16_t halfword = (package[SubPackNum + 1] << 8) | (package[SubPackNum]);
+				MotorOther[num_motor].md_workTime = halfword;
+				if(halfword != 0) MotorOther[num_motor].md_stParam.timeWork_cnfg = true;
+
+				SubPackNum += 2;
+			}
+			if(rcv_fl.FL1_DelayWork)
+			{
+				uint16_t halfword = (package[SubPackNum + 1] << 8) | (package[SubPackNum]);
+				MotorOther[num_motor].md_delayTime = halfword;
+				if(halfword != 0) MotorOther[num_motor].md_stParam.delay_cnfg = true;
+
+				SubPackNum += 2;
+			}
+			if(rcv_fl.FL1_ADC)
+			{
+				uint8_t adc_st = package[SubPackNum];
+				if(adc_st & 0x01)
+				{
+					MotorOther[num_motor].EnableADC = true;
+				}
+				else if (!(adc_st & 0x01))
+				{
+					MotorOther[num_motor].EnableADC = false;
+				}
+				SubPackNum++;
+			}
+			if(rcv_fl.FL0_StartInsruct)
+			{
+				if(package[SubPackNum] & 0x01) {}
+
+				if(package[SubPackNum] & 0x02)
+					package[SubPackNum] &= ~(1 << 1);
+
+
+				////
+				uint8_t num_ch = 0;
+				_Bool MotorFlags[ProtezGlobalConf.NumMotorConfigured];
+				for(uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
+				{
+					if(MotorOther[i].EnableADC)
+					{
+						MotorFlags[i] = true;
+						num_ch++;
+						ProtezGlobalConf.ADC_ChannelsEnable = true;
+					}
+					else
+					{
+						MotorFlags[i] = false;
+					}
+				}
+				ProtezGlobalConf.md_countMotorADCEnable[1] = num_ch;
+				drts_2 = num_pack * num_ch;
+				////
+
+				SubPackNum++;
+			}
+		}
+		else if(package[SubPackNum] == FL_ANGLE_MODE)
+		{
+			SubPackNum++;
+			if(rcv_fl.FL1_MotorSelect)
+			{
+				num_motor = package[SubPackNum];
+				MotorOther[num_motor].TOM = FL_ANGLE_MODE;
+				SubPackNum++;
+			}
+			if(rcv_fl.FL1_MotorDir)
+			{
+				dir = package[SubPackNum];
+				MotorOther[num_motor].md_rotsd = dir;
+				MotorOther[num_motor].md_stParam.dir_cnf = true;
+
+				SubPackNum++;
+			}
+			if(rcv_fl.FL2_Angle)
+			{
+				uint16_t halfword = (package[SubPackNum + 1] << 8) | (package[SubPackNum]);
+				MotorOther[num_motor].md_FL2_Angle = halfword;
+				if(halfword != 0)
+				{
+					MotorOther[num_motor].md_stParam.fl2_angle = true;
+				}
+
+				SubPackNum += 2;
+			}
+			if(rcv_fl.FL2_Time)
+			{
+				uint16_t halfword = (package[SubPackNum + 1] << 8) | (package[SubPackNum]);
+				MotorOther[num_motor].md_FL2_Time = halfword;
+				if(halfword != 0)
+				{
+					MotorOther[num_motor].md_stParam.fl2_time = true;
+				}
+				SubPackNum += 2;
+			}
+			if(rcv_fl.FL2_Speed)
+			{
+				uint16_t halfword = (package[SubPackNum + 1] << 8) | (package[SubPackNum]);
+				MotorOther[num_motor].md_FL2_Speed = halfword;
+				if(halfword != 0)
+				{
+					MotorOther[num_motor].md_stParam.fl2_speed = true;
+				}
+
+				SubPackNum += 2;
+			}
+			if(rcv_fl.FL2_Delay)
+			{
+				uint16_t halfword = (package[SubPackNum + 1] << 8) | (package[SubPackNum]);
+				MotorOther[num_motor].md_FL2_Delay = halfword;
+				if(halfword != 0)
+				{
+					MotorOther[num_motor].md_stParam.fl2_delay = true;
+				}
+
+				SubPackNum += 2;
+			}
+			if(rcv_fl.FL2_FeedBack)
+			{
+				uint8_t feedback_st = package[SubPackNum];
+				if(feedback_st & 0x01)
+				{
+					MotorOther[num_motor].md_EnableFeedBack = true;
+				}
+				else if (!(feedback_st & 0x01))
+				{
+					MotorOther[num_motor].md_EnableFeedBack = false;
+				}
+				SubPackNum++;
+			}
+			if(rcv_fl.FL0_StartInsruct)
+			{
+				SubPackNum++;
+			}
+		}
+	}
+
+	uint8_t FullCom[100] = {0, };
+	for(uint8_t i = 0; i < count; i++) FullCom[i + 1] = package[i];
+	FullCom[0] = ++count;
+//		HAL_UART_Transmit_IT(&huart6, (uint8_t*)FullCom, FullCom[0]);
+	HAL_UART_Transmit_DMA(&huart6, (uint8_t*)FullCom, FullCom[0]);
+	for(uint32_t w = 0; w < 100000; w++) {}		// Надо избавиться
+
+}
 void HandProtezUSBConnectHandler(void)
 {
 	DeviceIsConnected = true;

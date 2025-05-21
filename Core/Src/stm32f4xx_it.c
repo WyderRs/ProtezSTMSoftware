@@ -66,7 +66,7 @@ extern uint32_t dstc;
 extern uint32_t drts_2;
 
 extern uint8_t UsartData[120];
-
+extern _Bool ETEMode_Enable;
 
 
 /* USER CODE END TD */
@@ -472,9 +472,39 @@ void TIM1_UP_TIM10_IRQHandler(void)
 void TIM1_TRG_COM_TIM11_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_TRG_COM_TIM11_IRQn 0 */
-	if ((GLB_Time[2] != 0) && (GLB_Time[2] % 100) == 0) GLB_Time[0]++;	// second
-	if ((GLB_Time[2] != 0) && (GLB_Time[2] % 10) == 0) GLB_Time[1]++;	// 0.1 second
-	GLB_Time[2]++;								// 0.01 second
+	if ((GLB_Time[2] != 0) && (GLB_Time[2] % 100) == 0) GLB_Time[0]++;		// 1.0 second
+	if ((GLB_Time[2] != 0) && (GLB_Time[2] % 10) == 0)
+	{
+		GLB_Time[1]++;														// 0.1 second
+
+		if(/*ETEMode_Enable && */!ThisDeviceOnUsartCtrl)	// Sending if this device on USB control
+		{
+			for(uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
+			{
+				if(Motor[i].TOM == WRM_PWM_MODE)
+				{
+					if(Motor[i].md_st == WORKING)
+					{
+
+//						uint8_t FullCom[50] = {0, };
+//						for(uint8_t i = 0; i < count; i++) FullCom[i + 1] = package[i];
+//						FullCom[0] = ++count;
+//						HAL_UART_Transmit_DMA(&huart6, (uint8_t*)FullCom, FullCom[0]);
+
+
+
+
+
+
+					}
+
+				}
+			}
+
+		}
+
+	}
+	GLB_Time[2]++;															// 0.01 second
 
 	for (uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
 	{
@@ -504,7 +534,6 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 					{
 						if((glb_dstc % drts) > 0)
 						{
-							// ЗДЕСЬ НАДО БЫ ДЕЛИТЬ НА КОЛИЧЕСТВО ВКЛ АЦП (У МЕНЯ ПОКА 1)
 							count_last_bytes = DMA2_Stream0->NDTR - drts;
 							CDC_Transmit_FS(&ADC_Data[drts], count_last_bytes);
 						}
@@ -516,10 +545,12 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 						}
 					}
 //					}
-					StopMeasurement();
+					if(ProtezGlobalConf.ADC_ChannelsEnable) StopMeasurement();
 					ProtezGlobalConf.ADC_ChannelsEnable = false;
 					DRIVER_CTRL_OFF;
 					GLB_TypeCtrl = 0x00;
+
+					FL_1_ETEMode_Enable(false);
 				}
 			}
 		}

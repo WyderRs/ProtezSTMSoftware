@@ -1105,6 +1105,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 				memset(UsartData, '\0', 40);
 				memset(UsartDataByte, '\0', 2);
 //				UsartDataCnt = 0;
+				ETEMode_Enable = false;
 				UART_CommandRecieved = false;
 			}
 		}

@@ -16,6 +16,6 @@
 ../Core/Src/main.c:1021:6:HAL_ADC_ConvCpltCallback	3
 ../Core/Src/main.c:1049:6:HAL_UART_RxHalfCpltCallback	7
 ../Core/Src/main.c:1085:6:HAL_UART_RxCpltCallback	7
-../Core/Src/main.c:1123:6:HAL_UART_ErrorCallback	4
-../Core/Src/main.c:1151:6:HAL_GPIO_EXTI_Callback	35
-../Core/Src/main.c:1411:6:Error_Handler	1
+../Core/Src/main.c:1124:6:HAL_UART_ErrorCallback	4
+../Core/Src/main.c:1152:6:HAL_GPIO_EXTI_Callback	35
+../Core/Src/main.c:1412:6:Error_Handler	1

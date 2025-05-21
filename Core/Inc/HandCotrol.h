@@ -272,6 +272,7 @@ void Motor_SettingsEncoder(MotorDefinition *motor, GPIO_TypeDef *gpio, uint16_t 
 void Motor_SettingsSupEncoder(MotorDefinition *motor, GPIO_TypeDef *gpio, uint16_t gpio_pin, _Bool sideInvert);
 void HandProtezRecvInstructionCorrectToReverse(uint8_t *package, uint32_t count);
 void HandProtezRecvInstruction(uint8_t *package, uint32_t count);
+void HandProtezRecvInstructionOtherSide(RCV_Flags rcv_fl, uint8_t *package, uint32_t count);
 void PR_ADC_Init(uint32_t nomps);
 void ADC_Setchannel(uint8_t cnt, uint32_t trg_channel);
 void StartMeasurement(void);
@@ -282,6 +283,8 @@ void FL_2_Motor_Stop(MotorDefinition *motor);
 void StopMeasurement(void);
 void FL_1_HandProtezStartInstruction(void);
 void FL_2_HandProtezStartInstruction(void);
+void FL_1_ETEMode_Enable(_Bool state);
+void FL_2_ETEMode_Enable(void);
 MotorState CheckStateAllMotor(void);
 void FL_1_Motor_ContinuousDuty(MotorDefinition *motor);
 void FL_2_Motor_ContinuousDuty(MotorDefinition *motor);

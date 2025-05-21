@@ -53,6 +53,7 @@
   uint16_t USB_DATA_counter = 0;
   uint8_t buffer1[64] = {0, };
   extern _Bool ThisDeviceOnUsartCtrl;
+  extern _Bool ETEMode_Enable;
 /* USER CODE END PRIVATE_TYPES */
 
 /**
@@ -296,6 +297,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		  ThisDeviceOnUsartCtrl = false;
 		  HandProtezRecvInstruction(buffer1, USB_DATA_counter - 1);
 		  USB_DATA_counter = 0;
+		  ETEMode_Enable = false;
 	  }
 	  else
 	  {
