@@ -921,6 +921,7 @@ void HandProtezRecvInstruction(uint8_t *package, uint32_t count)
 			{
 				if(ETEMode_Enable)
 				{
+					package[SubPackNum] = 0x00;
 					Rcv_FL_1_SetADC(package[SubPackNum], num_motor);
 				}
 				else
@@ -1334,7 +1335,7 @@ void HandProtezRecvInstructionOtherSide(RCV_Flags rcv_fl, uint8_t *package, uint
 				ProtezGlobalConf.md_countMotorADCEnable[1] = num_ch;
 				drts_2 = num_pack * num_ch;
 				////
-
+				package[SubPackNum] = 0x00;
 				SubPackNum++;
 			}
 		}
