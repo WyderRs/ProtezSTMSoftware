@@ -1,4 +1,6 @@
-Core/Src/HandCotrol.o: ../Core/Src/HandCotrol.c ../Core/Inc/HandCotrol.h \
+Core/ProtezLib/ProtezHandControl.o: \
+ ../Core/ProtezLib/ProtezHandControl.cpp \
+ ../Core/ProtezLib/ProtezHandControl.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  ../Core/Inc/stm32f4xx_hal_conf.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
@@ -33,7 +35,7 @@ Core/Src/HandCotrol.o: ../Core/Src/HandCotrol.c ../Core/Inc/HandCotrol.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pcd.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_usb.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pcd_ex.h
-../Core/Inc/HandCotrol.h:
+../Core/ProtezLib/ProtezHandControl.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h:

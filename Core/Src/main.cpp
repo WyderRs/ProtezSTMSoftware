@@ -22,7 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "HandCotrol.h"
+#include "../ProtezLib/ProtezHandControl.h"
+#include "../ProtezLib/ProtezHandUsbProtocol.h"
 #include "usbd_cdc_if.h"
 #include "stdbool.h"
 #include "stm32f4xx_hal_uart.h"
@@ -31,51 +32,6 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
-
-
-extern uint8_t ADC_Data[500];
-extern uint8_t FeedBackData[500];
-extern uint32_t FeedBackDataCount;
-extern uint32_t FeedBackDataCount2[6];
-extern uint32_t drts;
-extern uint32_t dstc;
-extern MotorDefinition Motor[6];
-extern uint32_t glb_dstc;
-extern double Coef_P;
-extern double Coef_I;
-extern double Coef_T;
-extern uint16_t RegularValuePWM_PID[6];
-extern PRGlbDef ProtezGlobalConf;
-
-extern uint8_t UsartDataByte[30];
-extern uint8_t UsartData[120];
-extern uint32_t UsartDataCnt;
-extern _Bool UART_CommandRecieved;
-
-extern _Bool ThisDeviceOnUsartCtrl;
-extern _Bool ETEMode_Enable;
-
-uint32_t EncCnt[6];
-uint32_t EncCntNow[6];
-uint32_t EncCntOld[6];
-uint32_t d_EncCnt[6];
-
-uint32_t EncTime[6];
-uint32_t EncTimeNow[6];
-uint32_t EncTimeOld[6];
-
-uint32_t d_EncCntOld[6];
-uint32_t d_EncTime[6];
-double d_Velocity[6][500];
-
-
-double RegVal_PID[6];
-uint32_t LimitCNT[6];
-_Bool FLAG_MotorIsMove[6] = {false, };
-extern _Bool DeviceIsConnected;
-extern uint32_t num_pack;
-extern _Bool TransmitDataFlags[2];
-uint32_t UsartDataCnt22 = 0;
 
 
 
@@ -128,7 +84,69 @@ static void MX_TIM9_Init(void);
 static void MX_USART6_UART_Init(void);
 static void MX_TIM10_Init(void);
 /* USER CODE BEGIN PFP */
-void EncoderHandler(uint8_t i);
+
+PrHand_Motor_typedef Motor[6];
+
+
+
+
+
+
+void ProtezInit()
+{
+	  Motor[0].setTIM(&htim3);
+	  Motor[0].setChannel({PR_CHANNEL_3, PR_CHANNEL_4}, PR_DIR_FORWARD);
+	  Motor[0].setTargetSide(PR_MS_Stop);
+	  Motor[0].setPWM(0);
+	  Motor[0].setPWMCounter(0);
+
+	  Motor[1].setTIM(&htim4);
+	  Motor[1].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
+	  Motor[1].setTargetSide(PR_MS_Stop);
+	  Motor[1].setPWM(0);
+	  Motor[1].setPWMCounter(0);
+
+	  Motor[2].setTIM(&htim4);
+	  Motor[2].setChannel({PR_CHANNEL_3, PR_CHANNEL_4}, PR_DIR_FORWARD);
+	  Motor[2].setTargetSide(PR_MS_Stop);
+	  Motor[2].setPWM(0);
+	  Motor[2].setPWMCounter(0);
+
+	  Motor[3].setTIM(&htim1);
+	  Motor[3].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
+	  Motor[3].setTargetSide(PR_MS_Stop);
+	  Motor[3].setPWM(0);
+	  Motor[3].setPWMCounter(0);
+
+	  Motor[4].setTIM(&htim3);
+	  Motor[4].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
+	  Motor[4].setTargetSide(PR_MS_Stop);
+	  Motor[4].setPWM(0);
+	  Motor[4].setPWMCounter(0);
+
+	  Motor[5].setTIM(&htim5);
+	  Motor[5].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
+	  Motor[5].setTargetSide(PR_MS_Stop);
+	  Motor[5].setPWM(0);
+	  Motor[5].setPWMCounter(0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -178,24 +196,35 @@ int main(void)
   MX_USART6_UART_Init();
   MX_TIM10_Init();
   /* USER CODE BEGIN 2 */
-  PR_TIM11_ON;
-  PR_TIM10_ON;
-  /*Init*/
+
   ProtezInit();
 
-//  HAL_UART_Receive_IT(&huart6, &UsartDataByte, 6);
-  HAL_UART_Receive_DMA(&huart6, (uint8_t*)&UsartDataByte, 2);
+
+  DRIVER_CTRL_ON;
+//  DRIVER_CTRL_OFF;
 
 
-  PR_TIM9_ON;
-
+  PrHand_Motor_typedef::StartTIM(&htim1);
+  PrHand_Motor_typedef::StartTIM(&htim3);
+//  PrHand_Motor_typedef::StartTIM(&htim4);
+//  PrHand_Motor_typedef::StartTIM(&htim5);
 
   HAL_Delay(1000);
-//  PR_TIM11_ON;
-  uint8_t dd[3] = {0xDD, 0xDD, 0xDD};
-//  uint32_t gintsts = USB_OTG_FS->GINTSTS;
+  Motor[0].setPWM(500);
+  Motor[0].setTargetSide(PR_MS_Left);
+  Motor[0].Start();
+  HAL_Delay(1000);
+  Motor[0].setPWM(800);
+  Motor[0].setTargetSide(PR_MS_Right);
+  HAL_Delay(1000);
+  Motor[0].setTargetSide(PR_MS_Hold);
+  HAL_Delay(1000);
+  Motor[0].setTargetSide(PR_MS_Stop);
 
-  //StartMeasurement();
+
+
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -204,63 +233,14 @@ int main(void)
   {
 
 
-	  //HAL_PCD_GetConnectionState(&hpcd_USB_OTG_FS) == USB_CONNECTED
-
-
-//	  if(!DeviceIsConnected)
-//	  {
-//		  CDC_Transmit_FS(dd, 3);
-//		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-//		  HAL_Delay(100);
-//	  }
 
 
 
-//	  USBD_StatusTypeDef USBD_LL_DevConnected(USBD_HandleTypeDef  *pdev)
-//	  USBD_StatusTypeDef USBD_LL_DevDisconnected(USBD_HandleTypeDef  *pdev)
-//	  tatic void USBH_USR_DeviceAttached ( void *ph )
-//	  static void USBH_USR_DeviceDisconnected ( void *ph )
-
-//	  if(!DeviceIsConnected)
-//	  {
-//		  CDC_Transmit_FS(dd, 3);
-//		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-//		  HAL_Delay(50);
-//	  }
-
-//		// Проверяем на событие сброса USB
-//		if (gintsts & USB_OTG_GINTSTS_USBRST)
-//		{
-//			MX_USB_DEVICE_Init();
-//		}
-//		// Проверяем на завершение перечисления
-//		if (gintsts & USB_OTG_GINTSTS_ENUMDNE)
-//		{
-//			// Устройство успешно подключено и перечислено
-//			// Здесь можно начать обмен данными
-//		}
-//		// Проверяем на начало кадра
-//		if (gintsts & USB_OTG_GINTSTS_SOF)
-//		{
-//			// Обработка получения кадра начала кадра
-//			// Это может быть полезно для синхронизации
-//
-//		}
-//		// тип устройство подключено
-//		if (gintsts & USB_OTG_GINTSTS_IEPINT)
-//		{
-//			DeviceIsConnected = true;
-//			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-//			HAL_Delay(50);
-//		}
-//		// Сброс флагов (если необходимо)
-//		USB_OTG_FS->GINTSTS = gintsts; // Сбрасываем обработанные флаги
 
 
 
-	  // USBD_CDC.DISCINT
-	  //USB_OTG_GINTSTS_ENUMDNE
-	  //USB_OTG_GINTSTS_SOF
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -992,161 +972,39 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc1)
 {
-//	drts = DMA2_Stream0->NDTR;	// ЭТА ШТУКА ГОВОРИТ О КОЛИЧЕСТВЕ ГОТОВЫХ ДАННЫХ ПОД ОТПРАВКУ
 
-	// Сюда добавить условия какая это плата: данные по uart или по usb
-//	if(!ThisDeviceOnUsartCtrl)
-//	{
-////		DMA2_Stream0->NDTR;
-////		CDC_Transmit_FS(&ADC_Data[0], drts);
-////		dstc += drts;
-////		glb_dstc += drts;
-//
-////		TransmitDataFlags[0] = true;
-//	}
-//	else if(ThisDeviceOnUsartCtrl)
-//	{
-//		DMA2_Stream0->NDTR;
-//		HAL_UART_Transmit_IT(&huart6, &ADC_Data[0], drts);
-//		dstc += drts;
-//		glb_dstc += drts;
-//	}
-//	else if(!(ThisDeviceOnUsartCtrl) && (ETEMode_Enable == true))
-//	{
-//		CDC_Transmit_FS(&ADC_Data[0], drts);
-//	}
+
+
+
 }
 
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1)
 {
-//	drts = DMA2_Stream0->NDTR;
 
-	if(!ThisDeviceOnUsartCtrl)
-	{
-//		DMA2_Stream0->NDTR;
-//		CDC_Transmit_FS(&ADC_Data[drts], drts);
-//		dstc += drts;
-//		glb_dstc += drts;
 
-		TransmitDataFlags[0] = true;
 
-	}
-	else if(ThisDeviceOnUsartCtrl)
-	{
-		DMA2_Stream0->NDTR;
-		HAL_UART_Transmit_IT(&huart6, &ADC_Data[0], drts * 2);
-//		HAL_UART_Transmit_DMA(&huart6, (uint8_t*)&ADC_Data[0], drts * 2);
-		dstc += drts * 2;
-		glb_dstc += drts * 2;
-	}
-	else if(!(ThisDeviceOnUsartCtrl) && (ETEMode_Enable == true))
-	{
 
-	}
 }
 
 void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart->Instance == USART6)
-	{
-		UsartData[UsartDataCnt] = UsartDataByte[0];
-		UsartDataCnt++;
-//		UsartDataCnt22++;
-		if(ThisDeviceOnUsartCtrl)
-		{
-			if(UsartData[0] <= UsartDataCnt)
-			{
-				uint8_t data[50] = {0, };
-				uint8_t temp = 0;
-				temp = UsartDataCnt;
-				UsartDataCnt = 0;
-				for(uint8_t i = 0; i < temp; i++) data[i] = UsartData[i + 1];
-				HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, temp - 1);
-				HandProtezRecvInstruction((uint8_t*)&data, temp - 1);
 
-				memset(UsartData, '\0', 40);
-				memset(UsartDataByte, '\0', 2);
-//				UsartDataCnt = 0;
-				UART_CommandRecieved = false;
-			}
-		}
-		else if(!ThisDeviceOnUsartCtrl)
-		{
-//
-			if(UsartDataCnt >= 2 * num_pack * ProtezGlobalConf.md_countMotorADCEnable[1])
-			{
-				UsartDataCnt = 0;
-				TransmitDataFlags[1] = true;
-			}
-		}
-	}
+
+
+
+
 }
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 
-	if(huart->Instance == USART6)
-	{
-		UsartData[UsartDataCnt] = UsartDataByte[1];
-		UsartDataCnt++;
-//		UsartDataCnt22++;
-		if(ThisDeviceOnUsartCtrl)
-		{
-			if(UsartData[0] <= UsartDataCnt)
-			{
-				uint8_t data[50] = {0, };
-				uint8_t temp = 0;
-				temp = UsartDataCnt;
-				UsartDataCnt = 0;
-				for(uint8_t i = 0; i < temp; i++) data[i] = UsartData[i + 1];
-				HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, temp - 1);
-				HandProtezRecvInstruction((uint8_t*)&data, temp - 1);
-
-				memset(UsartData, '\0', 40);
-				memset(UsartDataByte, '\0', 2);
-//				UsartDataCnt = 0;
-				ETEMode_Enable = false;
-				UART_CommandRecieved = false;
-			}
-		}
-		else if(!ThisDeviceOnUsartCtrl)
-		{
-//
-			if(UsartDataCnt >= 2 * num_pack * ProtezGlobalConf.md_countMotorADCEnable[1])
-			{
-				UsartDataCnt = 0;
-				TransmitDataFlags[1] = true;
-			}
-		}
-	}
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
-//	if(huart->ErrorCode == HAL_UART_ERROR_NONE)		//	Ошибка не произошла
-//	{
-//		uint8_t o = 0;
-//	}
-	if(huart->ErrorCode == HAL_UART_ERROR_PE) 	//	Ошибка при проверке четности
-	{
 
-	}
-	if(huart->ErrorCode == HAL_UART_ERROR_NE)	//	Ошибка вследствие зашумления
-	{
 
-	}
-	else if(huart->ErrorCode == HAL_UART_ERROR_FE)	//	Ошибка кадрирования данных
-	{
 
-	}
-	else if(huart->ErrorCode == HAL_UART_ERROR_ORE)	//	Ошибка вследствие переполнения
-	{
-
-	}
-	else if(huart->ErrorCode == HAL_UART_ERROR_DMA)	//	Ошибка передачи посредством DMA
-	{
-
-	}
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
@@ -1154,253 +1012,32 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	//-----------------------------------------------------------------------------------------------------------------------------------//
 
 	//-----------------------------------------------------------------------------------------------------------------------------------//
-	/*Encoder Motor #1*/
-	for(uint8_t i = 0; i < 6; i++)
-	{
-		if(GPIO_Pin == Motor[i].Encoder.PIN)
-		{
-			if (HAL_GPIO_ReadPin(Motor[i].Encoder.GPIOsup, Motor[i].Encoder.PINsup) == GPIO_PIN_SET)
-			{
-				if(Motor[i].md_rotsd == Motor[i].Encoder.side[0])
-				{
-					EncTimeNow[i] = Motor[i].md_drum_cnt;
-					EncCntNow[i] = Motor[i].Encoder.CNT;
-					if(Motor[i].Encoder.CNT == 0) EncTimeOld[i] = EncTimeNow[i];
-					if(EncTimeOld[i] != EncTimeNow[i])
-					{
-		//				EncTime[N_motor] += (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
-						d_EncTime[i] = (EncTimeNow[i] - EncTimeOld[i]);
-
-						RegVal_PID[i] = Coef_P * ((((1.0 * Motor[i].md_FL2_Angle) / 1.5) / (Motor[i].md_FL2_Time * 0.01))
-								- (10000.0 / (1.0 * (d_EncTime[i]))));
-		//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
-
-
-						uint16_t temp = RegularValuePWM_PID[i] + (int16_t)(RegVal_PID[i]);
-						if(temp >= PID_MAX_VAL) RegularValuePWM_PID[i] = PID_MAX_VAL;
-						else if(temp <= PID_MIN_VAL) RegularValuePWM_PID[i] = PID_MIN_VAL;
-						else RegularValuePWM_PID[i] = temp;
-
-
-						Motor[i].md_FeedBackData[FeedBackDataCount2[i]] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
-						Motor[i].md_FeedBackData[FeedBackDataCount2[i] + 1] = (uint8_t)((RegularValuePWM_PID[i] & 0xFF00) >> 8);
-
-//						FeedBackData[(j * num_pack * 2) + FeedBackDataCount2[i]] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
-//						FeedBackData[(j * num_pack * 2) + FeedBackDataCount2[i] + 1] = (uint8_t)((RegularValuePWM_PID[i] & 0xFF00) >> 8);
-
-
-						FeedBackDataCount2[i] += 2;
-						FeedBackDataCount += 2;
-
-						if(FeedBackDataCount2[i] >= 2 * num_pack)
-						{
-							for(uint8_t t = 0; t < 2 * num_pack; t++)
-							{
-								FeedBackData[i * num_pack * 2 + t] = Motor[i].md_FeedBackData[t];
-							}
-							FeedBackDataCount2[i] = 0;
-							Motor[i].md_FeedBackDataFlag = true;
-						}
-
-						_Bool common_flag = true;
-						for(uint8_t t = 0; t < ProtezGlobalConf.md_countMotorFeedBackEnable[0]; t++)
-						{
-							common_flag = common_flag & Motor[i].md_FeedBackDataFlag;
-						}
-						if(common_flag)
-						{
-							FeedBackDataCount = 0;
-							FeedBackDataCount2[i] = 0;
-							TransmitDataFlags[0] = true;
-
-							for(uint8_t t = 0; t < ProtezGlobalConf.md_countMotorFeedBackEnable[0]; t++)
-							{
-								Motor[i].md_FeedBackDataFlag = false;
-							}
-						}
-
-
-
-//						if(FeedBackDataCount >= 2 * num_pack * ProtezGlobalConf.md_countMotorFeedBackEnable[0])
-//						{
-//							FeedBackDataCount = 0;
-//							FeedBackDataCount2[i] = 0;
-//							TransmitDataFlags[0] = true;
-//						}
-
-
-					}
-
-					EncTimeOld[i] = EncTimeNow[i];
-		//			d_EncCnt[N_motor] = EncCntNow[N_motor] - EncCntOld[N_motor];
-		//			EncCnt[N_motor] += EncCntNow[N_motor] - EncCntOld[N_motor];
-		//			EncCntOld[N_motor] = EncCntNow[N_motor];
-					Motor[i].Encoder.CNT++;
-
-					if(Motor[i].TOM == WRM_ANGLE_MODE)
-					{
-						if(Motor[i].md_st == WORKING)
-						{
-							if(Motor[i].md_rotsd == Motor[i].Encoder.side[0])
-								FL_2_Motor_SetDuty(&Motor[i], RegularValuePWM_PID[i], 0);
-							else if(Motor[i].md_rotsd == Motor[i].Encoder.side[1])
-								FL_2_Motor_SetDuty(&Motor[i], 0, RegularValuePWM_PID[i]);
-
-							if(RegularValuePWM_PID[i] == 0)
-							{
-								FL_2_Motor_SetDuty(&Motor[i], PID_MAX_VAL, PID_MAX_VAL);
-							}
-						}
-					}
-					FLAG_MotorIsMove[i] = true;
-					Motor[i].md_rotsd_now = Motor[i].Encoder.side[0];
-					Motor[i].Encoder.SideNow = Motor[i].Encoder.side[0];
-				}
-			}
-			/*Other Side*/
-			if (HAL_GPIO_ReadPin(Motor[i].Encoder.GPIO, Motor[i].Encoder.PIN) == GPIO_PIN_RESET)
-			{
-				if(Motor[i].md_rotsd == Motor[i].Encoder.side[1])
-				{
-					EncTimeNow[i] = Motor[i].md_drum_cnt;
-					EncCntNow[i] = Motor[i].Encoder.CNT;
-					if(Motor[i].Encoder.CNT == 0) EncTimeOld[i] = EncTimeNow[i];
-					if(EncTimeOld[i] != EncTimeNow[i])
-					{
-		//				EncTime[N_motor] += (EncTimeNow[N_motor] - EncTimeOld[N_motor]);
-						d_EncTime[i] = (EncTimeNow[i] - EncTimeOld[i]);
-
-						RegVal_PID[i] = Coef_P * ((((1.0 * Motor[i].md_FL2_Angle) / 1.5) / (Motor[i].md_FL2_Time * 0.01))
-								- (10000.0 / (1.0 * (d_EncTime[i]))));
-		//						+ (RegValOld[Motor[N_motor].md_encod_sn.cnt - 1] + (Coef_I * RegVal[Motor[N_motor].md_encod_sn.cnt]));
-
-
-						uint16_t temp = RegularValuePWM_PID[i] + (int16_t)(RegVal_PID[i]);
-						if(temp >= PID_MAX_VAL) RegularValuePWM_PID[i] = PID_MAX_VAL;
-						else if(temp <= PID_MIN_VAL) RegularValuePWM_PID[i] = PID_MIN_VAL;
-						else RegularValuePWM_PID[i] = temp;
-
-
-//						FeedBackData[j * num_pack * 2 + FeedBackDataCount2[i]] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
-//						FeedBackData[(j * num_pack * 2) + FeedBackDataCount2[i] + 1] = (uint8_t)((RegularValuePWM_PID[i] & 0xFF00) >> 8);
-
-						Motor[i].md_FeedBackData[FeedBackDataCount2[i]] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
-						Motor[i].md_FeedBackData[FeedBackDataCount2[i] + 1] = (uint8_t)((RegularValuePWM_PID[i] & 0xFF00) >> 8);
-
-
-						FeedBackDataCount2[i] += 2;
-						FeedBackDataCount += 2;
-
-						if(FeedBackDataCount2[i] >= 2 * num_pack)
-						{
-							for(uint8_t t = 0; t < 2 * num_pack; t++)
-							{
-								FeedBackData[i * num_pack * 2 + t] = Motor[i].md_FeedBackData[t];
-							}
-							FeedBackDataCount2[i] = 0;
-							Motor[i].md_FeedBackDataFlag = true;
-						}
-
-						_Bool common_flag = true;
-						for(uint8_t t = 0; t < ProtezGlobalConf.md_countMotorFeedBackEnable[0]; t++)
-						{
-							common_flag = common_flag & Motor[i].md_FeedBackDataFlag;
-						}
-						if(common_flag)
-						{
-							FeedBackDataCount = 0;
-							FeedBackDataCount2[i] = 0;
-							TransmitDataFlags[0] = true;
-
-							for(uint8_t t = 0; t < ProtezGlobalConf.md_countMotorFeedBackEnable[0]; t++)
-							{
-								Motor[i].md_FeedBackDataFlag = false;
-							}
-						}
-//						if(FeedBackDataCount >= 2 * num_pack * ProtezGlobalConf.md_countMotorFeedBackEnable[0])
-//						{
-//							FeedBackDataCount = 0;
-//							FeedBackDataCount2[i] = 0;
-//							TransmitDataFlags[0] = true;
-//						}
-
-					}
-
-					EncTimeOld[i] = EncTimeNow[i];
-		//			d_EncCnt[N_motor] = EncCntNow[N_motor] - EncCntOld[N_motor];
-		//			EncCnt[N_motor] += EncCntNow[N_motor] - EncCntOld[N_motor];
-		//			EncCntOld[N_motor] = EncCntNow[N_motor];
-					Motor[i].Encoder.CNT++;
-
-					if(Motor[i].TOM == WRM_ANGLE_MODE)
-					{
-						if(Motor[i].md_st == WORKING)
-						{
-							if(Motor[i].md_rotsd == Motor[i].Encoder.side[0])
-								FL_2_Motor_SetDuty(&Motor[i], RegularValuePWM_PID[i], 0);
-							else if(Motor[i].md_rotsd == Motor[i].Encoder.side[1])
-								FL_2_Motor_SetDuty(&Motor[i], 0, RegularValuePWM_PID[i]);
-
-							if(RegularValuePWM_PID[i] == 0)
-							{
-								FL_2_Motor_SetDuty(&Motor[i], PID_MAX_VAL, PID_MAX_VAL);
-							}
-						}
-					}
-					FLAG_MotorIsMove[i] = true;
-					Motor[i].md_rotsd_now = Motor[i].Encoder.side[1];
-					Motor[i].Encoder.SideNow = Motor[i].Encoder.side[1];
-				}
-			}
-		}
-
-	}
 }
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	if (htim->Instance == TIM1)
+	{
 
+	}
+	else if (htim->Instance == TIM2)
+	{
 
+	}
+	else if (htim->Instance == TIM3)
+	{
 
-//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-//{
-//	if(huart == &huart6)
-//	{
-//		// Далее переписать в доп протокол между STM
-//		// Тип отправить что то, по нему определять что полетит далее данные или команда или еще какая нибудь хрень
-//
-//
-//
-//		UsartData[UsartDataCnt2] = UsartDataByte;
-//		UsartDataCnt2++;
-//
-//
-//		if(UsartData[0] == UsartDataCnt2)
-//		{
-//			char data[50];
-//			for(uint8_t i = 0; i < UsartDataCnt2; i++) data[i] = UsartData[i + 1];
-//
-//			HandProtezRecvInstructionCorrectToReverse((uint8_t*)&data, UsartDataCnt2 - 1);
-//			HandProtezRecvInstruction((uint8_t*)data, UsartDataCnt2 - 1);
-//
-////			memset(UsartData, '\0', UsartDataCnt2);
-//			UsartDataCnt2 = 0;
-//			UsartData[0] = 0;
-//			UART_CommandRecieved = false;
-//		}
-//
-//
-//		HAL_UART_Receive_IT(&huart6, (uint8_t*)&UsartDataByte, 1);
-//	}
-//}
+	}
+	else if (htim->Instance == TIM4)
+	{
 
+	}
+	else if (htim->Instance == TIM5)
+	{
 
+	}
 
-
-
-//HAL_UART_AbortReceiveCpltCallback(UART_HandleTypeDef *huart)
-//{
-//	uint8_t o = 0;
-//}
-
+}
 
 
 /* USER CODE END 4 */

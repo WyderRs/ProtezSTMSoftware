@@ -22,51 +22,14 @@
 #include "stm32f4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "HandCotrol.h"
+#include "../ProtezLib/ProtezHandControl.h"
 #include <stdbool.h>
 #include "usbd_cdc_if.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
-volatile uint32_t GLB_Time[3];
-extern MotorDefinition Motor[6];
-extern PRGlbDef ProtezGlobalConf;
-extern uint32_t glb_dstc;
-extern uint32_t Target_dtsc[6];
-extern uint32_t drts;
-extern uint8_t ADC_Data[500];
-extern uint8_t FeedBackData[500];
-extern uint32_t FeedBackDataCount;
-extern uint32_t FeedBackDataCount2[6];
-extern uint16_t RegularValuePWM_PID[6];
-extern bool FLAG_MotorIsMove[6];
-uint16_t count_last_bytes;
 
-extern uint8_t GLB_TypeCtrl;
-extern FL2_TypeCtrlMove TCM;
-
-extern uint32_t TEST_cntTim2;
-extern uint32_t num_pack;
-
-
-
-
-extern uint32_t d_EncTime[6][500];
-
-extern uint32_t LimitCNT[6];
-extern _Bool FLAG_MotorIsMove[6];
-extern _Bool FlagDMA_START;
-
-
-extern _Bool TransmitDataFlags[2];
-extern _Bool ThisDeviceOnUsartCtrl;
-extern uint32_t drts;
-extern uint32_t dstc;
-extern uint32_t drts_2;
-
-extern uint8_t UsartData[120];
-extern _Bool ETEMode_Enable;
 
 
 /* USER CODE END TD */
@@ -298,75 +261,6 @@ void TIM1_BRK_TIM9_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_BRK_TIM9_IRQn 0 */
 
-	if(!ThisDeviceOnUsartCtrl)
-	{
-		if(TransmitDataFlags[0] || TransmitDataFlags[1])
-		{
-			uint32_t temp = 0;
-			if(TransmitDataFlags[1])
-			{
-				for(uint8_t i = 0; i < drts_2 * 2; i++)
-				{
-					ADC_Data[drts * 2 + i] = UsartData[i];
-					temp++;
-				}
-				TransmitDataFlags[1] = false;
-			}
-
-			if(GLB_TypeCtrl == 0x01) // Pwm Mode
-			{
-				CDC_Transmit_FS(&ADC_Data[0], drts * 2 + temp);
-				dstc += drts * 2;
-				glb_dstc += drts * 2;
-			}
-			else if(GLB_TypeCtrl == 0x02) // Angle Mode
-			{
-				CDC_Transmit_FS(&FeedBackData[0], 2 * num_pack * ProtezGlobalConf.md_countMotorFeedBackEnable[0]);
-
-			}
-
-
-			TransmitDataFlags[0] = false;
-		}
-	}
-	else if(ThisDeviceOnUsartCtrl)
-	{
-		if(GLB_TypeCtrl == 0x02) // if ANGLE_Mode
-		{
-			if(TransmitDataFlags[0])
-			{
-				uint32_t temp = 0;
-
-
-
-
-			}
-
-		}
-
-	}
-
-
-
-//			uint32_t Target_dtsc_temp = 0;
-//			for(uint8_t ii = 0; ii < ProtezGlobalConf.NumMotorConfigured; ii++) Target_dtsc_temp += Target_dtsc[ii];
-//			if(((Target_dtsc_temp - glb_dstc) > 0) && ((Target_dtsc_temp - glb_dstc) <Target_dtsc_temp))	// Device not undelivered data
-//			{
-//				if((glb_dstc % drts) > 0)
-//				{
-//					// ЗДЕСЬ НАДО БЫ ДЕЛИТЬ НА КОЛИЧЕСТВО ВКЛ АЦП (У МЕНЯ ПОКА 1)
-//					count_last_bytes = DMA2_Stream0->NDTR - drts;
-//					CDC_Transmit_FS(&ADC_Data[drts], count_last_bytes);
-//				}
-//				else
-//				{
-//					count_last_bytes = Target_dtsc_temp - glb_dstc;
-//					CDC_Transmit_FS(&ADC_Data[0], count_last_bytes);
-//					glb_dstc += count_last_bytes;
-//				}
-//			}
-
-
 
 
   /* USER CODE END TIM1_BRK_TIM9_IRQn 0 */
@@ -383,79 +277,10 @@ void TIM1_BRK_TIM9_IRQHandler(void)
 void TIM1_UP_TIM10_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
-	for(uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
-	{
-		if(Motor[i].TOM == WRM_ANGLE_MODE)
-		{
-			Motor[i].md_drum_cnt++;
-			LimitCNT[i]++;
-			if(Motor[i].md_st == WORKING)
-			{
-				if(FLAG_MotorIsMove[i] == false)
-				{
-					if(LimitCNT[i] > 300)
-					{
-						RegularValuePWM_PID[i] += 10;
-						if(Motor[i].md_rotsd == Motor[i].Encoder.side[0]) FL_2_Motor_SetDuty(&Motor[i], RegularValuePWM_PID[i], 0);
-						else if(Motor[i].md_rotsd == Motor[i].Encoder.side[1]) FL_2_Motor_SetDuty(&Motor[i], 0, RegularValuePWM_PID[i]);
 
 
-//						FeedBackData[j * num_pack * 2 + FeedBackDataCount2[i]] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
-//						FeedBackData[(j * num_pack * 2) + FeedBackDataCount2[i] + 1] = (uint8_t)((RegularValuePWM_PID[i] & 0xFF00) >> 8);
 
 
-						Motor[i].md_FeedBackData[FeedBackDataCount2[i]] = (uint8_t)(RegularValuePWM_PID[i] & 0x00FF);
-						Motor[i].md_FeedBackData[FeedBackDataCount2[i] + 1] = (uint8_t)((RegularValuePWM_PID[i] & 0xFF00) >> 8);
-
-
-						FeedBackDataCount += 2;
-						FeedBackDataCount2[i] += 2;
-
-
-						if(FeedBackDataCount2[i] >= 2 * num_pack)
-						{
-							for(uint8_t t = 0; t < 2 * num_pack; t++)
-							{
-								FeedBackData[i * num_pack * 2 + t] = Motor[i].md_FeedBackData[t];
-							}
-							FeedBackDataCount2[i] = 0;
-							Motor[i].md_FeedBackDataFlag = true;
-						}
-
-						_Bool common_flag = true;
-						for(uint8_t t = 0; t < ProtezGlobalConf.md_countMotorFeedBackEnable[0]; t++)
-						{
-							common_flag = common_flag & Motor[i].md_FeedBackDataFlag;
-						}
-						if(common_flag)
-						{
-							FeedBackDataCount = 0;
-							FeedBackDataCount2[i] = 0;
-							TransmitDataFlags[0] = true;
-
-							for(uint8_t t = 0; t < ProtezGlobalConf.md_countMotorFeedBackEnable[0]; t++)
-							{
-								Motor[i].md_FeedBackDataFlag = false;
-							}
-
-						}
-
-
-//						if(FeedBackDataCount >= 2 * num_pack * ProtezGlobalConf.md_countMotorFeedBackEnable[0])
-//						{
-//							FeedBackDataCount = 0;
-//							FeedBackDataCount2[i] = 0;
-//							TransmitDataFlags[0] = true;
-//						}
-
-						LimitCNT[i] = 0;
-					}
-				}
-				FLAG_MotorIsMove[i] = false;
-			}
-		}
-
-	}
 
 
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
@@ -472,158 +297,12 @@ void TIM1_UP_TIM10_IRQHandler(void)
 void TIM1_TRG_COM_TIM11_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_TRG_COM_TIM11_IRQn 0 */
-	if ((GLB_Time[2] != 0) && (GLB_Time[2] % 100) == 0) GLB_Time[0]++;		// 1.0 second
-	if ((GLB_Time[2] != 0) && (GLB_Time[2] % 10) == 0)
-	{
-		GLB_Time[1]++;														// 0.1 second
-
-		if(/*ETEMode_Enable && */!ThisDeviceOnUsartCtrl)	// Sending if this device on USB control
-		{
-			for(uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
-			{
-				if(Motor[i].TOM == WRM_PWM_MODE)
-				{
-					if(Motor[i].md_st == WORKING)
-					{
-
-//						uint8_t FullCom[50] = {0, };
-//						for(uint8_t i = 0; i < count; i++) FullCom[i + 1] = package[i];
-//						FullCom[0] = ++count;
-//						HAL_UART_Transmit_DMA(&huart6, (uint8_t*)FullCom, FullCom[0]);
 
 
 
 
 
 
-					}
-
-				}
-			}
-
-		}
-
-	}
-	GLB_Time[2]++;															// 0.01 second
-
-	for (uint8_t i = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
-	{
-		if (GLB_TypeCtrl == 0x01)	 /*PWM MODE*/
-		{
-			FL_1_Motor_ContinuousDuty(&Motor[i]);
-			if ((Motor[i].md_st == WAITING) && (GLB_Time[2] >= Motor[i].md_startWorkTime))
-			{
-				if((ProtezGlobalConf.ADC_ChannelsEnable) && (!FlagDMA_START))
-				{
-					StartMeasurement();		// If there is enables channel ADC then to run measurement
-					FlagDMA_START = true;
-				}
-				FL_1_Motor_Start(&Motor[i]);
-			}
-			else if ((Motor[i].md_st == WORKING) && (GLB_Time[2] >= Motor[i].md_stopWorkTime))
-			{
-
-				FL_1_Motor_Stop(&Motor[i]);
-				if(CheckStateAllMotor() == FINISH)
-				{
-//					for(uint8_t ii = 0; ii < ProtezGlobalConf.NumMotorConfigured; ii++)
-//					{
-					uint32_t Target_dtsc_temp = 0;
-					for(uint8_t ii = 0; ii < ProtezGlobalConf.NumMotorConfigured; ii++) Target_dtsc_temp += Target_dtsc[ii];
-					if(((Target_dtsc_temp - glb_dstc) > 0) && ((Target_dtsc_temp - glb_dstc) <Target_dtsc_temp))	// Device not undelivered data
-					{
-						if((glb_dstc % drts) > 0)
-						{
-							count_last_bytes = DMA2_Stream0->NDTR - drts;
-							CDC_Transmit_FS(&ADC_Data[drts], count_last_bytes);
-						}
-						else
-						{
-							count_last_bytes = Target_dtsc_temp - glb_dstc;
-							CDC_Transmit_FS(&ADC_Data[0], count_last_bytes);
-							glb_dstc += count_last_bytes;
-						}
-					}
-//					}
-					if(ProtezGlobalConf.ADC_ChannelsEnable) StopMeasurement();
-					ProtezGlobalConf.ADC_ChannelsEnable = false;
-					DRIVER_CTRL_OFF;
-					GLB_TypeCtrl = 0x00;
-
-					FL_1_ETEMode_Enable(false);
-				}
-			}
-		}
-		else if (GLB_TypeCtrl == 0x02)	 /*ANGLE MODE*/
-		{
-			if (TCM == ANGLE_TIME)		// Angle-Time
-			{
-				if ((Motor[i].md_st == WAITING) && (GLB_Time[2] >= Motor[i].md_FL2_startWorkTime))
-				{
-					RegularValuePWM_PID[i] = 0;
-					FeedBackData[i] = 0;
-					FeedBackDataCount = 0;
-					FLAG_MotorIsMove[i] = false;
-					FL_2_Motor_Start(&Motor[i]);
-				}
-				else if ((Motor[i].md_st == WORKING) && /*(GLB_Time[2] < Motor[i].md_FL2_stopWorkTime) &&*/ (Motor[i].Encoder.CNT < (Motor[i].md_FL2_Angle / 1.5)))
-				{
-//					FL_2_Motor_ContinuousDuty(&Motor[i]);
-
-				}
-				else if (/*((Motor[i].md_st == WORKING) && (GLB_Time[2] >= Motor[i].md_FL2_stopWorkTime))
-						|| */((Motor[i].Encoder.CNT > (Motor[i].md_FL2_Angle / 1.5)) && ((Motor[i].md_FL2_Angle / 1.5) != 0)))
-				{
-					FL_2_Motor_Stop(&Motor[i]);
-					if(CheckStateAllMotor() == FINISH)
-					{
-//						for(uint8_t ii = 0; i < ProtezGlobalConf.NumMotorConfigured; i++)
-//						{
-//							if(((Target_dtsc[ii] - glb_dstc) > 0) && ((Target_dtsc[ii] - glb_dstc) < Target_dtsc[ii]))	// Device not undelivered data
-//							{
-//								if((glb_dstc % drts) > 0)
-//								{
-//									// ЗДЕСЬ НАДО БЫ ДЕЛИТЬ НА КОЛИЧЕСТВО ВКЛ АЦП (У МЕНЯ ПОКА 1)
-//									count_last_bytes = DMA2_Stream0->NDTR - drts;
-//									CDC_Transmit_FS(&ADC_Data[drts], count_last_bytes);
-//								}
-//								else
-//								{
-//									count_last_bytes = Target_dtsc[ii] - glb_dstc;
-//									CDC_Transmit_FS(&ADC_Data[0], count_last_bytes);
-//									glb_dstc += count_last_bytes;
-//								}
-//							}
-//						}
-//						StopMeasurement();
-						ProtezGlobalConf.FeedBack = false;
-
-						DRIVER_CTRL_OFF;
-						GLB_TypeCtrl = 0x00;
-						RegularValuePWM_PID[i] = 0;
-//						if(Motor[i].md_EnableFeedBack == true)
-//						{
-//							CDC_Transmit_FS((uint8_t*)FeedBackData, Motor[i].md_CountFeedBackData * 2);	 // 2 because data is uint16_t type
-//							Motor[i].md_CountFeedBackData = 0;
-//						}
-						FLAG_MotorIsMove[i] = false;
-					}
-				}
-
-			}
-			else if (TCM == ANGLE_SPEED)	// Angle-Speed
-			{
-				FL_2_Motor_Start(&Motor[i]);
-			}
-			else if (TCM == TIME_SPEED)	// Time-Speed
-			{
-				FL_2_Motor_Start(&Motor[i]);
-			}
-		}
-	}
-	if (GLB_Time[2] == 65535) GLB_Time[2] = 0;
-	if (GLB_Time[1] == 65535) GLB_Time[1] = 0;
-	if (GLB_Time[0] == 65535) GLB_Time[0] = 0;
 
   /* USER CODE END TIM1_TRG_COM_TIM11_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
@@ -639,10 +318,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 void TIM2_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM2_IRQn 0 */
-	if (!(GLB_Time[0] >= 1))
-	{
-		TEST_cntTim2++;
-	}
+
 
 
   /* USER CODE END TIM2_IRQn 0 */

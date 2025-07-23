@@ -23,7 +23,11 @@
 
 /* USER CODE BEGIN INCLUDE */
 #include "stdbool.h"
-#include "HandCotrol.h"
+#include "../ProtezLib/ProtezHandControl.h"
+#include "../ProtezLib/ProtezHandUsbProtocol.h"
+#include <vector>
+
+
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,6 +36,10 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+
+_Bool flag_start = false;
+std::vector<uint8_t> buffer;
+
 
 /* USER CODE END PV */
 
@@ -50,10 +58,11 @@
   */
 
 /* USER CODE BEGIN PRIVATE_TYPES */
-  uint16_t USB_DATA_counter = 0;
-  uint8_t buffer1[64] = {0, };
-  extern _Bool ThisDeviceOnUsartCtrl;
-  extern _Bool ETEMode_Enable;
+
+
+
+
+
 /* USER CODE END PRIVATE_TYPES */
 
 /**
@@ -268,65 +277,29 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 
-  uint8_t buffer[64] = {0, };
-  memset (buffer, '\0', 64);  // clear the buffer
-  uint8_t len = (uint8_t) *Len;
-  memcpy(buffer, Buf, len);  // copy the data to the buffer
-  memset(Buf, '\0', len);   // clear the Buf also
-
-
-  // 64 БАЙТА - КАК ПРЕДЕЛ, ЕСЛИ БОЛЬШЕ 64 БАЙТ НА ОТПРАВКУ, ТО ОТПРАВИТЬ 64, А ПОТОМ СЛЕДУЮЩИЕ
-
-
-
-  for(uint8_t i = 0; i < len; i++)
+  uint8_t dada[100] = {0, };
+  for(uint8_t j = 0; j < *Len; j++)
   {
-	  if((buffer[i] == 0x44) && (buffer[i + 1] == 0x44) && (buffer[i + 2] == 0x44) && (buffer[i + 3] == 0x44))
-	  {
-		  HandProtezUSBConnectHandler();
-	  }
+	  dada[j] = Buf[j];
   }
 
+  if ((Buf[0] == PR_PROTOCOL_START_PACK.first) && (Buf[1] == PR_PROTOCOL_START_PACK.second)) flag_start = true;
 
-  for(uint8_t i = 0; i < len; i++)
-  {
-	  buffer1[USB_DATA_counter] = buffer[i];
+  if (flag_start) {
+	  for (uint32_t i = (!buffer.empty() ? 0 : 2); i < *Len; i++) {
+		  if ((Buf[i - 1] == PR_PROTOCOL_STOP_PACK.first) && (Buf[i] == PR_PROTOCOL_STOP_PACK.second)) {
+			  buffer.pop_back();
 
-	  if((buffer1[USB_DATA_counter - 1] == 0xFF) && (buffer1[USB_DATA_counter] == 0xDD))
-	  {
-		  ThisDeviceOnUsartCtrl = false;
-		  HandProtezRecvInstruction(buffer1, USB_DATA_counter - 1);
-		  USB_DATA_counter = 0;
-		  ETEMode_Enable = false;
+
+
+			  ProtezHandUsbProtocol::readRawCommand(&buffer);
+			  buffer.clear();
+			  flag_start = false;
+			  break;
+		  }
+		  buffer.push_back(Buf[i]);
 	  }
-	  else
-	  {
-		  USB_DATA_counter++;
-	  }
-
   }
-
-
-
-//  for(uint8_t i = 0; i < len; i++)
-//  {
-//	  if((buffer[i] == 0xFF) && (buffer[i + 1] == 0xDD))
-//	  {
-//		  uint16_t i_s = 0;
-//		  for(uint8_t ii = iii; ii < i; ii++)
-//		  {
-//			  buffer1[ii - iii] = buffer[ii];
-//			  i_s++;
-//		  }
-//		  HandProtezRecvInstruction(buffer1, i_s);
-//		  iii = i + 2;
-//
-//	  }
-//  }
-
-
-
-
 
   return (USBD_OK);
   /* USER CODE END 6 */
