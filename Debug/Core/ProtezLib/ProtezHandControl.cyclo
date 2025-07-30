@@ -1,12 +1,32 @@
-../Core/ProtezLib/ProtezHandControl.cpp:12:1:PrHand_Motor_typedef::PrHand_Motor_typedef()	1
-../Core/ProtezLib/ProtezHandControl.cpp:15:1:PrHand_Motor_typedef::~PrHand_Motor_typedef()	1
-../Core/ProtezLib/ProtezHandControl.cpp:21:6:void PrHand_Motor_typedef::setTIM(TIM_HandleTypeDef*)	1
-../Core/ProtezLib/ProtezHandControl.cpp:26:7:bool PrHand_Motor_typedef::setChannel(std::pair<PrHand_MotCh, PrHand_MotCh>, prHand_Direction)	14
-../Core/ProtezLib/ProtezHandControl.cpp:63:6:void PrHand_Motor_typedef::setPWM(uint32_t)	3
-../Core/ProtezLib/ProtezHandControl.cpp:75:6:void PrHand_Motor_typedef::setPWMCounter(uint32_t)	1
-../Core/ProtezLib/ProtezHandControl.cpp:76:6:void PrHand_Motor_typedef::setTargetSide(PrHand_MoveState)	1
-../Core/ProtezLib/ProtezHandControl.cpp:81:6:void PrHand_Motor_typedef::Start()	1
-../Core/ProtezLib/ProtezHandControl.cpp:86:6:void PrHand_Motor_typedef::Stop()	1
-../Core/ProtezLib/ProtezHandControl.cpp:101:6:static void PrHand_Motor_typedef::StartTIM(TIM_HandleTypeDef*)	1
-../Core/ProtezLib/ProtezHandControl.cpp:105:6:static void PrHand_Motor_typedef::StopTIM(TIM_HandleTypeDef*)	1
-../Core/ProtezLib/ProtezHandControl.cpp:119:6:void PrHand_Motor_typedef::insert_pwm()	5
+../Core/ProtezLib/ProtezHandControl.cpp:17:1:PrHand_Motor_typedef::PrHand_Motor_typedef(uint8_t)	1
+../Core/ProtezLib/ProtezHandControl.cpp:21:1:PrHand_Motor_typedef::~PrHand_Motor_typedef()	1
+../Core/ProtezLib/ProtezHandControl.cpp:27:9:uint8_t PrHand_Motor_typedef::getID()	1
+../Core/ProtezLib/ProtezHandControl.cpp:31:22:PrHand_MotorSetState PrHand_Motor_typedef::getState()	1
+../Core/ProtezLib/ProtezHandControl.cpp:35:10:uint32_t PrHand_Motor_typedef::getPWM()	1
+../Core/ProtezLib/ProtezHandControl.cpp:39:10:uint32_t PrHand_Motor_typedef::getWorkTime()	1
+../Core/ProtezLib/ProtezHandControl.cpp:43:10:uint32_t PrHand_Motor_typedef::getWorkDelay()	1
+../Core/ProtezLib/ProtezHandControl.cpp:47:10:uint32_t PrHand_Motor_typedef::getTargetSide()	1
+../Core/ProtezLib/ProtezHandControl.cpp:51:22:PrHand_MotorSetState PrHand_Motor_typedef::CheckWorkInterval()	3
+../Core/ProtezLib/ProtezHandControl.cpp:60:6:static void PrHand_Motor_typedef::setGLBCounter(uint32_t)	1
+../Core/ProtezLib/ProtezHandControl.cpp:64:10:static uint32_t PrHand_Motor_typedef::getGLBCounter()	1
+../Core/ProtezLib/ProtezHandControl.cpp:68:6:void PrHand_Motor_typedef::setTIM(TIM_HandleTypeDef*)	1
+../Core/ProtezLib/ProtezHandControl.cpp:73:7:bool PrHand_Motor_typedef::setChannel(std::pair<PrHand_MotCh, PrHand_MotCh>, prHand_Direction)	14
+../Core/ProtezLib/ProtezHandControl.cpp:110:6:void PrHand_Motor_typedef::setPWM(uint32_t)	3
+../Core/ProtezLib/ProtezHandControl.cpp:122:6:void PrHand_Motor_typedef::setTargetSide(PrHand_MoveState)	1
+../Core/ProtezLib/ProtezHandControl.cpp:127:6:void PrHand_Motor_typedef::setWorkTime(uint16_t)	1
+../Core/ProtezLib/ProtezHandControl.cpp:131:6:void PrHand_Motor_typedef::setWorkDelay(uint16_t)	1
+../Core/ProtezLib/ProtezHandControl.cpp:137:6:void PrHand_Motor_typedef::Start()	1
+../Core/ProtezLib/ProtezHandControl.cpp:142:6:void PrHand_Motor_typedef::Stop()	1
+../Core/ProtezLib/ProtezHandControl.cpp:159:6:void PrHand_Motor_typedef::setParameters()	1
+../Core/ProtezLib/ProtezHandControl.cpp:164:6:void PrHand_Motor_typedef::setState(PrHand_MotorSetState)	1
+../Core/ProtezLib/ProtezHandControl.cpp:168:6:void PrHand_Motor_typedef::setADCChannel(PrHand_ADC_Channels)	1
+../Core/ProtezLib/ProtezHandControl.cpp:172:21:PrHand_ADC_Channels PrHand_Motor_typedef::getADCChannel()	1
+../Core/ProtezLib/ProtezHandControl.cpp:176:6:void PrHand_Motor_typedef::enableADC()	1
+../Core/ProtezLib/ProtezHandControl.cpp:180:6:void PrHand_Motor_typedef::disableADC()	1
+../Core/ProtezLib/ProtezHandControl.cpp:184:22:PrHand_MotorADCState PrHand_Motor_typedef::getEnabledADC()	1
+../Core/ProtezLib/ProtezHandControl.cpp:222:6:static void PrHand_Motor_typedef::SetGLBTIM(TIM_HandleTypeDef*)	1
+../Core/ProtezLib/ProtezHandControl.cpp:226:6:static void PrHand_Motor_typedef::StartGLBTIM()	1
+../Core/ProtezLib/ProtezHandControl.cpp:230:6:static void PrHand_Motor_typedef::StopGLBTIM()	1
+../Core/ProtezLib/ProtezHandControl.cpp:234:6:static void PrHand_Motor_typedef::StartTIM(TIM_HandleTypeDef*)	1
+../Core/ProtezLib/ProtezHandControl.cpp:238:6:static void PrHand_Motor_typedef::StopTIM(TIM_HandleTypeDef*)	1
+../Core/ProtezLib/ProtezHandControl.cpp:253:6:void PrHand_Motor_typedef::insert_pwm()	5

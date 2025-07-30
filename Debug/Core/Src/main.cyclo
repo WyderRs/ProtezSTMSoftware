@@ -1,28 +1,35 @@
-../Core/Src/main.cpp:95:6:void ProtezInit()	1
-../Core/Src/main.cpp:161:5:int main()	1
-../Core/Src/main.cpp:255:6:void SystemClock_Config()	3
-../Core/Src/main.cpp:301:13:void MX_ADC1_Init()	8
-../Core/Src/main.cpp:398:13:void MX_TIM1_Init()	8
-../Core/Src/main.cpp:477:13:void MX_TIM2_Init()	4
-../Core/Src/main.cpp:522:13:void MX_TIM3_Init()	9
-../Core/Src/main.cpp:593:13:void MX_TIM4_Init()	9
-../Core/Src/main.cpp:664:13:void MX_TIM5_Init()	7
-../Core/Src/main.cpp:727:13:void MX_TIM9_Init()	3
-../Core/Src/main.cpp:765:13:void MX_TIM10_Init()	2
-../Core/Src/main.cpp:796:13:void MX_TIM11_Init()	2
-../Core/Src/main.cpp:827:13:void MX_USART6_UART_Init()	2
-../Core/Src/main.cpp:858:13:void MX_DMA_Init()	1
-../Core/Src/main.cpp:882:13:void MX_GPIO_Init()	1
-../Core/Src/main.cpp:973:6:void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef*)	1
-../Core/Src/main.cpp:982:6:void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef*)	1
-../Core/Src/main.cpp:990:6:void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef*)	1
-../Core/Src/main.cpp:998:6:void HAL_UART_RxCpltCallback(UART_HandleTypeDef*)	1
-../Core/Src/main.cpp:1003:6:void HAL_UART_ErrorCallback(UART_HandleTypeDef*)	1
-../Core/Src/main.cpp:1010:6:void HAL_GPIO_EXTI_Callback(uint16_t)	1
-../Core/Src/main.cpp:1017:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	4
-../Core/Src/main.cpp:1049:6:void Error_Handler()	1
+../Core/Src/main.cpp:103:6:void ProtezInit()	1
+../Core/Src/main.cpp:172:5:int main()	1
+../Core/Src/main.cpp:253:6:void SystemClock_Config()	3
+../Core/Src/main.cpp:299:13:void MX_ADC1_Init()	8
+../Core/Src/main.cpp:396:13:void MX_TIM1_Init()	8
+../Core/Src/main.cpp:475:13:void MX_TIM2_Init()	4
+../Core/Src/main.cpp:520:13:void MX_TIM3_Init()	9
+../Core/Src/main.cpp:591:13:void MX_TIM4_Init()	9
+../Core/Src/main.cpp:662:13:void MX_TIM5_Init()	7
+../Core/Src/main.cpp:725:13:void MX_TIM9_Init()	3
+../Core/Src/main.cpp:763:13:void MX_TIM10_Init()	2
+../Core/Src/main.cpp:794:13:void MX_TIM11_Init()	2
+../Core/Src/main.cpp:825:13:void MX_USART6_UART_Init()	2
+../Core/Src/main.cpp:856:13:void MX_DMA_Init()	1
+../Core/Src/main.cpp:880:13:void MX_GPIO_Init()	1
+../Core/Src/main.cpp:971:6:void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef*)	1
+../Core/Src/main.cpp:976:6:void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef*)	1
+../Core/Src/main.cpp:981:6:void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef*)	1
+../Core/Src/main.cpp:989:6:void HAL_UART_RxCpltCallback(UART_HandleTypeDef*)	1
+../Core/Src/main.cpp:994:6:void HAL_UART_ErrorCallback(UART_HandleTypeDef*)	1
+../Core/Src/main.cpp:1001:6:void HAL_GPIO_EXTI_Callback(uint16_t)	1
+../Core/Src/main.cpp:1008:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	17
+../Core/Src/main.cpp:1074:6:void Error_Handler()	1
 D:\Progs\STM32CubeIDE_1.17.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130\tools\bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/include/c++/12.3.1/bits/stl_pair.h:534:12:constexpr std::pair<_T1, _T2>::pair(_U1&&, _U2&&) [with _U1 = PrHand_MotCh; _U2 = PrHand_MotCh; typename std::enable_if<(std::_PCC<true, _T1, _T2>::_MoveConstructiblePair<_U1, _U2>() && std::_PCC<true, _T1, _T2>::_ImplicitlyMoveConvertiblePair<_U1, _U2>()), bool>::type <anonymous> = true; _T1 = PrHand_MotCh; _T2 = PrHand_MotCh]	1
+D:\Progs\STM32CubeIDE_1.17.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130\tools\arm-none-eabi\include\c++\12.3.1\bits\stl_vector.h:1600:7:void std::vector<_Tp, _Alloc>::clear() [with _Tp = long unsigned int; _Alloc = std::allocator<long unsigned int>]	1
+D:\Progs\STM32CubeIDE_1.17.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130\tools\arm-none-eabi\include\c++\12.3.1\bits\stl_vector.h:987:7:std::vector<_Tp, _Alloc>::size_type std::vector<_Tp, _Alloc>::size() const [with _Tp = long unsigned int; _Alloc = std::allocator<long unsigned int>]	1
 D:\Progs\STM32CubeIDE_1.17.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130\tools\bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/include/c++/12.3.1/bits/move.h:77:5:constexpr _Tp&& std::forward(typename remove_reference<_Tp>::type&) [with _Tp = PrHand_MotCh]	1
-../Core/Src/main.cpp:1058:1:void __static_initialization_and_destruction_0(int, int)	7
-../Core/Src/main.cpp:1058:1:cpp)	1
-../Core/Src/main.cpp:1058:1:cpp)	1
+D:\Progs\STM32CubeIDE_1.17.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130\tools\arm-none-eabi\include\c++\12.3.1\bits\stl_vector.h:1928:7:void std::vector<_Tp, _Alloc>::_M_erase_at_end(pointer) [with _Tp = long unsigned int; _Alloc = std::allocator<long unsigned int>]	2
+D:\Progs\STM32CubeIDE_1.17.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130\tools\arm-none-eabi\include\c++\12.3.1\bits\stl_vector.h:298:7:std::_Vector_base<_Tp, _Alloc>::_Tp_alloc_type& std::_Vector_base<_Tp, _Alloc>::_M_get_Tp_allocator() [with _Tp = long unsigned int; _Alloc = std::allocator<long unsigned int>]	1
+D:\Progs\STM32CubeIDE_1.17.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130\tools\arm-none-eabi\include\c++\12.3.1\bits\alloc_traits.h:847:5:void std::_Destroy(_ForwardIterator, _ForwardIterator, allocator<_T2>&) [with _ForwardIterator = long unsigned int*; _Tp = long unsigned int]	1
+D:\Progs\STM32CubeIDE_1.17.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130\tools\arm-none-eabi\include\c++\12.3.1\bits\stl_construct.h:182:5:void std::_Destroy(_ForwardIterator, _ForwardIterator) [with _ForwardIterator = long unsigned int*]	1
+D:\Progs\STM32CubeIDE_1.17.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130\tools\arm-none-eabi\include\c++\12.3.1\bits\stl_construct.h:172:9:static void std::_Destroy_aux<true>::__destroy(_ForwardIterator, _ForwardIterator) [with _ForwardIterator = long unsigned int*]	1
+../Core/Src/main.cpp:1083:1:void __static_initialization_and_destruction_0(int, int)	6
+../Core/Src/main.cpp:1083:1:cpp)	1
+../Core/Src/main.cpp:1083:1:cpp)	1

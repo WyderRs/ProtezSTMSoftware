@@ -283,16 +283,18 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	  dada[j] = Buf[j];
   }
 
-  if ((Buf[0] == PR_PROTOCOL_START_PACK.first) && (Buf[1] == PR_PROTOCOL_START_PACK.second)) flag_start = true;
+  if ((Buf[0] == PR_PROTOCOL_START_PACK.first) && (Buf[1] == PR_PROTOCOL_START_PACK.second))
+  {
+	  flag_start = true;
+	  buffer.clear();
+  }
 
   if (flag_start) {
 	  for (uint32_t i = (!buffer.empty() ? 0 : 2); i < *Len; i++) {
 		  if ((Buf[i - 1] == PR_PROTOCOL_STOP_PACK.first) && (Buf[i] == PR_PROTOCOL_STOP_PACK.second)) {
 			  buffer.pop_back();
 
-
-
-			  ProtezHandUsbProtocol::readRawCommand(&buffer);
+			  ProtezHandUsbProtocol::readRawPack(&buffer);
 			  buffer.clear();
 			  flag_start = false;
 			  break;

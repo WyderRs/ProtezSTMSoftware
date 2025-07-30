@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "../ProtezLib/ProtezHandControl.h"
 #include "../ProtezLib/ProtezHandUsbProtocol.h"
+#include "../ProtezLib/ProtezHandADC.h"
 #include "usbd_cdc_if.h"
 #include "stdbool.h"
 #include "stm32f4xx_hal_uart.h"
@@ -85,50 +86,60 @@ static void MX_USART6_UART_Init(void);
 static void MX_TIM10_Init(void);
 /* USER CODE BEGIN PFP */
 
-PrHand_Motor_typedef Motor[6];
-
-
+PrHand_Motor_typedef Motor[6] =
+{
+	PrHand_Motor_typedef(0),
+	PrHand_Motor_typedef(1),
+	PrHand_Motor_typedef(2),
+	PrHand_Motor_typedef(3),
+	PrHand_Motor_typedef(4),
+	PrHand_Motor_typedef(5),
+};
+ProtezHandADC PrHand_ADC(&hadc1, &htim2);
 
 
 
 
 void ProtezInit()
 {
-	  Motor[0].setTIM(&htim3);
-	  Motor[0].setChannel({PR_CHANNEL_3, PR_CHANNEL_4}, PR_DIR_FORWARD);
-	  Motor[0].setTargetSide(PR_MS_Stop);
-	  Motor[0].setPWM(0);
-	  Motor[0].setPWMCounter(0);
+	PrHand_ADC.setPoints(500);
+	PrHand_ADC.setPackSizeData(20);
 
-	  Motor[1].setTIM(&htim4);
-	  Motor[1].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
-	  Motor[1].setTargetSide(PR_MS_Stop);
-	  Motor[1].setPWM(0);
-	  Motor[1].setPWMCounter(0);
+	Motor[0].setTIM(&htim3);
+	Motor[0].setChannel({PR_CHANNEL_3, PR_CHANNEL_4}, PR_DIR_FORWARD);
+	Motor[0].setADCChannel(ADC_Channel_5);
+	Motor[0].setTargetSide(PR_MS_Stop);
+	Motor[0].setPWM(0);
 
-	  Motor[2].setTIM(&htim4);
-	  Motor[2].setChannel({PR_CHANNEL_3, PR_CHANNEL_4}, PR_DIR_FORWARD);
-	  Motor[2].setTargetSide(PR_MS_Stop);
-	  Motor[2].setPWM(0);
-	  Motor[2].setPWMCounter(0);
+	Motor[1].setTIM(&htim4);
+	Motor[1].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
+	Motor[0].setADCChannel(ADC_Channel_3);
+	Motor[1].setTargetSide(PR_MS_Stop);
+	Motor[1].setPWM(0);
 
-	  Motor[3].setTIM(&htim1);
-	  Motor[3].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
-	  Motor[3].setTargetSide(PR_MS_Stop);
-	  Motor[3].setPWM(0);
-	  Motor[3].setPWMCounter(0);
+	Motor[2].setTIM(&htim4);
+	Motor[2].setChannel({PR_CHANNEL_3, PR_CHANNEL_4}, PR_DIR_FORWARD);
+	Motor[0].setADCChannel(ADC_Channel_4);
+	Motor[2].setTargetSide(PR_MS_Stop);
+	Motor[2].setPWM(0);
 
-	  Motor[4].setTIM(&htim3);
-	  Motor[4].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
-	  Motor[4].setTargetSide(PR_MS_Stop);
-	  Motor[4].setPWM(0);
-	  Motor[4].setPWMCounter(0);
+	Motor[3].setTIM(&htim1);
+	Motor[3].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
+	Motor[0].setADCChannel(ADC_Channel_2);
+	Motor[3].setTargetSide(PR_MS_Stop);
+	Motor[3].setPWM(0);
 
-	  Motor[5].setTIM(&htim5);
-	  Motor[5].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
-	  Motor[5].setTargetSide(PR_MS_Stop);
-	  Motor[5].setPWM(0);
-	  Motor[5].setPWMCounter(0);
+	Motor[4].setTIM(&htim3);
+	Motor[4].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
+	Motor[0].setADCChannel(ADC_Channel_7);
+	Motor[4].setTargetSide(PR_MS_Stop);
+	Motor[4].setPWM(0);
+
+	Motor[5].setTIM(&htim5);
+	Motor[5].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
+	Motor[0].setADCChannel(ADC_Channel_6);
+	Motor[5].setTargetSide(PR_MS_Stop);
+	Motor[5].setPWM(0);
 }
 
 
@@ -198,7 +209,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   ProtezInit();
-
+  PrHand_Motor_typedef::SetGLBTIM(&htim11);
 
   DRIVER_CTRL_ON;
 //  DRIVER_CTRL_OFF;
@@ -206,22 +217,9 @@ int main(void)
 
   PrHand_Motor_typedef::StartTIM(&htim1);
   PrHand_Motor_typedef::StartTIM(&htim3);
-//  PrHand_Motor_typedef::StartTIM(&htim4);
-//  PrHand_Motor_typedef::StartTIM(&htim5);
-
-  HAL_Delay(1000);
-  Motor[0].setPWM(500);
-  Motor[0].setTargetSide(PR_MS_Left);
-  Motor[0].Start();
-  HAL_Delay(1000);
-  Motor[0].setPWM(800);
-  Motor[0].setTargetSide(PR_MS_Right);
-  HAL_Delay(1000);
-  Motor[0].setTargetSide(PR_MS_Hold);
-  HAL_Delay(1000);
-  Motor[0].setTargetSide(PR_MS_Stop);
 
 
+  PrHand_Motor_typedef::StartGLBTIM();
 
 
 
@@ -972,19 +970,12 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc1)
 {
-
-
-
-
 }
 
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1)
 {
-
-
-
-
+	ProtezHandUsbProtocol::FlagDataADC = true;
 }
 
 void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart)
@@ -1035,6 +1026,40 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	else if (htim->Instance == TIM5)
 	{
 
+	}
+	else if (htim->Instance == TIM9) // ТАЙМЕР ОТВЕЧАЮЩИЙ ЗА ОТПРАВКУ
+	{
+		if (ProtezHandUsbProtocol::FlagDataADC)
+		{
+			ProtezHandADC::DataADC.clear();
+			CDC_Transmit_FS((uint8_t*)&ProtezHandADC::DataADC, ProtezHandADC::DataADC.size());
+			ProtezHandUsbProtocol::FlagDataADC = false;
+		}
+	}
+	else if (htim->Instance == TIM11) // ТАЙМЕР ОБРАБАТЫВАЮЩИЙ НАСТРОЙКУ И ВКЛЮЧЕНИЕ ДВИГАТЕЛЕЙ
+	{
+		for (auto &motor : Motor) {
+			if (motor.getState() == _Launched) {
+				if (PrHand_ADC.getStateADC() == _ADC_NoConfigured) {
+					PrHand_ADC.ADC_Init();
+					PrHand_ADC.setStateADC(_ADC_Configured);
+				}
+
+				if(motor.CheckWorkInterval() == _Working) {
+					if (PrHand_ADC.getStateADC() == _ADC_Configured)
+						PrHand_ADC.StartADC();
+					motor.Start();
+					motor.setState(_Working);
+				}
+			}
+			else if (motor.getState() == _Working) {
+				if (motor.CheckWorkInterval() == _Ending) {
+					motor.Stop();
+					if (PrHand_ADC.getStateADC() == _ADC_Working) PrHand_ADC.StopADC();
+				}
+			}
+		}
+		PrHand_Motor_typedef::setGLBCounter((PrHand_Motor_typedef::getGLBCounter() + 1));
 	}
 
 }

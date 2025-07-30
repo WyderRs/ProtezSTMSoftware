@@ -1,3 +1,4 @@
+"./Core/ProtezLib/ProtezHandADC.o"
 "./Core/ProtezLib/ProtezHandControl.o"
 "./Core/ProtezLib/ProtezHandUsbProtocol.o"
 "./Core/Src/main.o"
