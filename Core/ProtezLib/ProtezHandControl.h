@@ -123,9 +123,9 @@ public:
     void setState(PrHand_MotorSetState);			/*Установка состояния двигателя.*/
 
     /*STATIC FUNCTION*/
-//    							/*Инициализация АЦП.*/
-//    static void StartADC();							/*Запуск АЦП.*/
-//    static void StopADC();							/*Остановка АЦП.*/
+//    												/*Инициализация АЦП.*/
+//    static void StartADC();						/*Запуск АЦП.*/
+//    static void StopADC();						/*Остановка АЦП.*/
 //    static void setStateADC(PrHand_GLB_ADCState);	/*Установка состояния АЦП.*/
 //    static PrHand_GLB_ADCState getStateADC();		/*Возвращает текущее состояние АЦП.*/
 
@@ -143,7 +143,7 @@ public:
     uint32_t getPWM();			/*Возвращает текущий ШИМ.*/
     uint32_t getWorkTime();		/*Возвращает установленное время работы.*/
     uint32_t getWorkDelay();	/*Возвращает установленное время задеркжи.*/
-    uint32_t getTargetSide();	/*Возвращает установленное направление вращения.*/
+    PrHand_MoveState getTargetSide();	/*Возвращает установленное направление вращения.*/
 
     PrHand_MotorSetState getState();		 /*Возвращает текущее состояние двигателя.*/
     PrHand_MotorSetState CheckWorkInterval();/*Проверяет интервал работы. Когда нужно запустить двигатель и когда его остановить.*/

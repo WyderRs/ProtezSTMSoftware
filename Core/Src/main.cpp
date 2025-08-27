@@ -34,9 +34,6 @@
 /* USER CODE BEGIN PTD */
 
 
-
-
-
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -68,6 +65,8 @@ DMA_HandleTypeDef hdma_usart6_tx;
 
 /* USER CODE BEGIN PV */
 
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -97,11 +96,22 @@ PrHand_Motor_typedef Motor[6] =
 };
 ProtezHandADC PrHand_ADC(&hadc1, &htim2);
 
+uint32_t UsartDataCount;
+uint8_t UsartDataByte;
+uint8_t UsartRecvData[5000];
+_Bool flag_uartResending;
+_Bool flag_ComSend;
+
 
 
 
 void ProtezInit()
 {
+	ProtezHandUsbProtocol::setUARTHandle(&huart6);
+	ProtezHandUsbProtocol::setTimerTransmiter(&htim9);
+	HAL_UART_Receive_DMA(&huart6, (uint8_t*)&UsartDataByte, 1);
+
+
 	PrHand_ADC.setPoints(500);
 	PrHand_ADC.setPackSizeData(20);
 
@@ -113,31 +123,31 @@ void ProtezInit()
 
 	Motor[1].setTIM(&htim4);
 	Motor[1].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
-	Motor[0].setADCChannel(ADC_Channel_3);
+	Motor[1].setADCChannel(ADC_Channel_3);
 	Motor[1].setTargetSide(PR_MS_Stop);
 	Motor[1].setPWM(0);
 
 	Motor[2].setTIM(&htim4);
 	Motor[2].setChannel({PR_CHANNEL_3, PR_CHANNEL_4}, PR_DIR_FORWARD);
-	Motor[0].setADCChannel(ADC_Channel_4);
+	Motor[2].setADCChannel(ADC_Channel_4);
 	Motor[2].setTargetSide(PR_MS_Stop);
 	Motor[2].setPWM(0);
 
 	Motor[3].setTIM(&htim1);
 	Motor[3].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
-	Motor[0].setADCChannel(ADC_Channel_2);
+	Motor[3].setADCChannel(ADC_Channel_2);
 	Motor[3].setTargetSide(PR_MS_Stop);
 	Motor[3].setPWM(0);
 
 	Motor[4].setTIM(&htim3);
 	Motor[4].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
-	Motor[0].setADCChannel(ADC_Channel_7);
+	Motor[4].setADCChannel(ADC_Channel_7);
 	Motor[4].setTargetSide(PR_MS_Stop);
 	Motor[4].setPWM(0);
 
 	Motor[5].setTIM(&htim5);
 	Motor[5].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
-	Motor[0].setADCChannel(ADC_Channel_6);
+	Motor[5].setADCChannel(ADC_Channel_6);
 	Motor[5].setTargetSide(PR_MS_Stop);
 	Motor[5].setPWM(0);
 }
@@ -970,8 +980,8 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc1)
 {
-}
 
+}
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1)
 {
@@ -979,14 +989,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1)
 }
 
 void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart)
-{
-
-
-
-
-
-}
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 
 }
@@ -1029,33 +1031,93 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 	else if (htim->Instance == TIM9) // ТАЙМЕР ОТВЕЧАЮЩИЙ ЗА ОТПРАВКУ
 	{
+//		if (!ProtezHandUsbProtocol::Queue_SendData.empty())
+//		{
+//
+//			uint8_t state = CDC_Transmit_FS(&ProtezHandUsbProtocol::Queue_SendData.front().first, ProtezHandUsbProtocol::Queue_SendData.front().second);
+//			if (state == USBD_OK)
+//			{
+//				ProtezHandUsbProtocol::popQueueElement();
+//			}
+//		}
+
 		if (ProtezHandUsbProtocol::FlagDataADC)
 		{
-			ProtezHandADC::DataADC.clear();
-			CDC_Transmit_FS((uint8_t*)&ProtezHandADC::DataADC, ProtezHandADC::DataADC.size());
+
+
+			if (ProtezHandUsbProtocol::FlagUartControl)
+			{
+				HAL_UART_Transmit_IT(&huart6, (uint8_t*)&ProtezHandADC::DataADC, PrHand_ADC.getPackSizeData() * 2);
+			}
+			else
+			{
+				CDC_Transmit_FS((uint8_t*)&ProtezHandADC::DataADC, PrHand_ADC.getPackSizeData() * 2);
+			}
+
+
+
+
+
 			ProtezHandUsbProtocol::FlagDataADC = false;
 		}
 	}
 	else if (htim->Instance == TIM11) // ТАЙМЕР ОБРАБАТЫВАЮЩИЙ НАСТРОЙКУ И ВКЛЮЧЕНИЕ ДВИГАТЕЛЕЙ
 	{
 		for (auto &motor : Motor) {
-			if (motor.getState() == _Launched) {
-				if (PrHand_ADC.getStateADC() == _ADC_NoConfigured) {
-					PrHand_ADC.ADC_Init();
-					PrHand_ADC.setStateADC(_ADC_Configured);
-				}
+			if (motor.CheckWorkInterval() == _Launched)
+			{
 
-				if(motor.CheckWorkInterval() == _Working) {
+			}
+			else if (motor.CheckWorkInterval() == _Working)
+			{
+				if ((PrHand_ADC.getStateADC() == _ADC_Disable) || (PrHand_ADC.getStateADC() == _ADC_Released)) {
+					if (PrHand_ADC.getEnabledADC() == _ADC_NoConfigured) {
+						PrHand_ADC.ADC_Init();
+					}
+			}
+
+				if (motor.getState() == _Launched) {
+					/*Если хотябы одна система передачи включена*/
+					if ((PrHand_ADC.getStateADC() == _ADC_Configured) /*|| (Feedback Enabled)*/)
+					{
+						ProtezHandUsbProtocol::TimerTX_Start();
+					}
+
 					if (PrHand_ADC.getStateADC() == _ADC_Configured)
+					{
+						if (ProtezHandUsbProtocol::FlagUartControl)
+						{
+							ProtezHandUsbProtocol::UsartProtocol::transmitUartADCStartPack();
+						}
+						else ProtezHandUsbProtocol::transmitADCStartPack();
 						PrHand_ADC.StartADC();
+					}
+
 					motor.Start();
 					motor.setState(_Working);
 				}
+
 			}
-			else if (motor.getState() == _Working) {
-				if (motor.CheckWorkInterval() == _Ending) {
+			else if (motor.CheckWorkInterval() == _Ending) {
+				if (motor.getState() == _Working) {
 					motor.Stop();
-					if (PrHand_ADC.getStateADC() == _ADC_Working) PrHand_ADC.StopADC();
+
+					if (PrHand_ADC.getStateADC() == _ADC_Working)
+					{
+						PrHand_ADC.StopADC();
+						if (ProtezHandUsbProtocol::FlagUartControl)
+						{
+							ProtezHandUsbProtocol::UsartProtocol::transmitUartADCStopPack();
+						}
+						else ProtezHandUsbProtocol::transmitADCStopPack();
+						if(ProtezHandUsbProtocol::FlagUartControl) ProtezHandUsbProtocol::FlagUartControl = false;
+					}
+
+					/*Если все системы передачи выключины*/
+					if ((PrHand_ADC.getStateADC() == _ADC_Released) /*Feedback disabled*/)
+					{
+						ProtezHandUsbProtocol::TimerTX_Stop();
+					}
 				}
 			}
 		}
@@ -1064,6 +1126,81 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 }
 
+
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if(huart->Instance == USART6) {
+		UsartRecvData[UsartDataCount] = UsartDataByte;
+		/*RecvCommand*/
+		if ((UsartRecvData[UsartDataCount - 1] == PR_PROTOCOL_USART_START.first)
+				&& (UsartRecvData[UsartDataCount] == PR_PROTOCOL_USART_START.second)) {
+			UsartDataCount++;
+		}
+		else if ((UsartRecvData[UsartDataCount - 1] == PR_PROTOCOL_USART_STOP.first)
+				&& (UsartRecvData[UsartDataCount] == PR_PROTOCOL_USART_STOP.second)) {
+			std::vector<uint8_t> temp(0);
+			uint16_t localusartcount = 2;
+			uint16_t count_dat = 0;
+			uint8_t code = 0;
+			uint16_t cc = 2;
+			while ((UsartDataCount - 2) > localusartcount) {
+				code = UsartRecvData[cc];
+				count_dat = (code & 0xE0) >> 5;
+				code = (code & 0x1F);
+				cc++;
+				localusartcount++;
+				for (uint16_t r = cc; r < cc + count_dat; r++) {
+					temp.push_back(UsartRecvData[r]);
+					localusartcount++;
+				}
+				cc += count_dat;
+				ProtezHandUsbProtocol::setCommand[code] = temp;
+				temp.clear();
+			}
+			ProtezHandUsbProtocol::FlagUartControl = true;
+			ProtezHandUsbProtocol::UsartProtocol::UsartCommand();
+			UsartDataCount = 0;
+		}
+
+		/*RecvData*/
+		else if ((UsartRecvData[UsartDataCount - 1] == PR_PROTOCOL_PACK_ADC_START_pair.first)
+				&& (UsartRecvData[UsartDataCount] == PR_PROTOCOL_PACK_ADC_START_pair.second)) {
+			flag_uartResending = true;
+			UsartDataCount++;
+		}
+		else if ((UsartRecvData[UsartDataCount - 1] == PR_PROTOCOL_PACK_ADC_STOP_pair.first)
+				&& (UsartRecvData[UsartDataCount] == PR_PROTOCOL_PACK_ADC_STOP_pair.second)) {
+			CDC_Transmit_FS((uint8_t*)&UsartRecvData, UsartDataCount + 1);
+			flag_uartResending = false;
+			UsartDataCount = 0;
+		}
+		else if (flag_uartResending)
+		{
+			if (UsartDataCount >= PrHand_ADC.getPackSizeData() * 2)
+			{
+				CDC_Transmit_FS((uint8_t*)&UsartRecvData, UsartDataCount + 1);
+				UsartDataCount = 0;
+			}
+			else UsartDataCount++;
+		}
+		else UsartDataCount++;
+
+
+
+
+
+
+
+
+
+
+	}
+}
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+//	for (uint32_t i = 0; i < 500; i++) ProtezHandUsbProtocol::PackOtherSide[i] = 0;
+}
 
 /* USER CODE END 4 */
 

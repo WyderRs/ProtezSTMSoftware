@@ -28,6 +28,7 @@
 #define PR_PROTOCOL_START	std::pair<uint8_t, uint8_t>(0xDE, 0xAD)
 #define PR_PROTOCOL_STOP	std::pair<uint8_t, uint8_t>(0xBE, 0xEF)
 
+
 #define PR_PROTOCOL_MASK_NUM_BYTES	0xE0
 #define PR_PROTOCOL_MASK_CODE		0x1F
 
@@ -55,30 +56,45 @@
 #define PR_VAL_RUNNING_START			0x01
 #define PR_VAL_RUNNING_ALL_START		0x02
 #define PR_VAL_RUNNING_ALL_STOP			0x03
+/*SIDEPLATE*/
+#define PR_VAL_SIDEPLATE_THIS			0x00
+#define PR_VAL_SIDEPLATE_OTHER			0x01
 
 
-/*TO PC FORMAT DATA*/
-#define PR_PROTOCOL_CODE_TOPC_ADC_START		{0xAA, 0x55}
-#define PR_PROTOCOL_CODE_TOPC_ADC_STOP		{0x66, 0x11}
+#define PR_PROTOCOL_USART_START				std::pair<uint8_t, uint8_t>(0xDE, 0xAD)
+#define PR_PROTOCOL_USART_STOP				std::pair<uint8_t, uint8_t>(0xBE, 0xEF)
 
+#define PR_PROTOCOL_PACK_ADC_START_pair 	std::pair<uint8_t, uint8_t>(0xEE, 0xDD)
+#define PR_PROTOCOL_PACK_ADC_STOP_pair 		std::pair<uint8_t, uint8_t>(0xCC, 0xBB)
 
+#define PR_PROTOCOL_USART_DATA_START_pair 	std::pair<uint8_t, uint8_t>(0xCA, 0xF5)
+#define PR_PROTOCOL_USART_DATA_STOP_pair 	std::pair<uint8_t, uint8_t>(0xBD, 0x7D)
 
 
 class ProtezHandUsbProtocol {
 public:
+	static UART_HandleTypeDef *ProtezUART;
+
 	static std::vector<std::vector<uint8_t>> subPack;
 	static std::vector<std::pair<uint8_t, std::vector<uint8_t>>> command;
 	static std::map<uint8_t, std::vector<uint8_t>> setCommand;
+
+
+	static uint8_t PackOtherSide[500];
+
 	static TIM_HandleTypeDef* timer;
 
 	static _Bool FlagDataADC;
+	static _Bool FlagUartControl;
+
 private:
 
 public:
 	ProtezHandUsbProtocol();
 	~ProtezHandUsbProtocol();
 
-	static void readRawPack(std::vector<uint8_t>*);
+	static void setUARTHandle(UART_HandleTypeDef *);
+	static void readRawPack(const std::vector<uint8_t>);
 	static void selectorCommand();
 	static void setCommands();
 
@@ -91,6 +107,26 @@ public:
 	static void setTimerTransmiter(TIM_HandleTypeDef*);
 	static void TimerTX_Start();
 	static void TimerTX_Stop();
+
+	static void transmitADCStartPack();
+	static void transmitADCStopPack();
+
+
+	class UsartProtocol
+	{
+	public:
+		UsartProtocol();
+		~UsartProtocol();
+
+		static void UsartCommand();
+		static void transmitUartADCStartPack();
+		static void transmitUartADCStopPack();
+		static void transmitUartStartPack();
+		static void transmitUartStopPack();
+
+
+		static std::map<uint8_t, std::vector<uint8_t>> setUsartCommand;
+	};
 
 
 };

@@ -20,6 +20,8 @@
 #define PR_ADC_MAX_CHANNEL 	(uint8_t)6		// Максимальное число каналов
 
 
+
+
 enum PrHand_GLB_ADCState
 {
 	_ADC_NoConfigured = 0,
@@ -38,7 +40,7 @@ private:
 	uint32_t Points;		// Число точек за 1 с измерений.
 
 	uint32_t PackSize;
-    PrHand_GLB_ADCState GLB_ADC_state;
+    PrHand_GLB_ADCState GLB_ADC_state = _ADC_Disable;
 public:
 	ProtezHandADC(ADC_HandleTypeDef*, TIM_HandleTypeDef*);
 	~ProtezHandADC();
@@ -64,8 +66,10 @@ public:
 	void StopADC();								/*Остановка АЦП.*/
 	void setStateADC(PrHand_GLB_ADCState);	/*Установка состояния АЦП.*/
 	PrHand_GLB_ADCState getStateADC();		/*Возвращает текущее состояние АЦП.*/
+	PrHand_GLB_ADCState getEnabledADC();	/*Возвращает разрешено ли АЦП.*/
 public:
-	static std::vector<uint32_t> DataADC;
+//	static std::vector<uint8_t> DataADC;
+	static uint8_t DataADC[500];
 };
 
 #endif /*__cplusplus*/

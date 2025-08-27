@@ -8,10 +8,13 @@
 
 #include "ProtezHandADC.h"
 
+/*TO PC FORMAT DATA*/
 
-std::vector<uint32_t> ProtezHandADC::DataADC;
+uint8_t ProtezHandADC::DataADC[500];
 
 extern PrHand_Motor_typedef Motor[6];
+
+uint8_t data2[10];
 
 ProtezHandADC::ProtezHandADC(ADC_HandleTypeDef* _adc, TIM_HandleTypeDef* _tim) : Adc(_adc), Tim(_tim)
 {
@@ -104,6 +107,7 @@ void ProtezHandADC::ADC_Init()
 	}
 
 	ADC_TimerInit();
+	setStateADC(_ADC_Configured);
 }
 void ProtezHandADC::setConfiguredChannels(uint8_t cfgCh)
 {
@@ -126,38 +130,34 @@ uint32_t ProtezHandADC::getPackSizeData()
 
 void ProtezHandADC::StartADC()
 {
-	uint8_t data[2] = PR_PROTOCOL_CODE_TOPC_ADC_START;
-	CDC_Transmit_FS((uint8_t*)&data, 2);
-
-
 	HAL_TIM_Base_Start_IT(Tim);
 	HAL_ADC_Start_DMA(Adc, (uint32_t*)&DataADC, PackSize);
+
 	GLB_ADC_state = _ADC_Working;
 }
 void ProtezHandADC::StopADC()
 {
-	uint8_t data[2] = PR_PROTOCOL_CODE_TOPC_ADC_STOP;
-	/*Отправляем остаток*/
-	if (!ProtezHandADC::DataADC.empty()) CDC_Transmit_FS((uint8_t*)&ProtezHandADC::DataADC, ProtezHandADC::DataADC.size());
-
-	CDC_Transmit_FS((uint8_t*)&data, 2);
-
 	HAL_ADC_Stop(Adc);
 	HAL_ADC_Stop_DMA(Adc);
 	HAL_ADC_DeInit(Adc);
 	HAL_TIM_Base_DeInit(Tim);
+
 	GLB_ADC_state = _ADC_Released;
 }
 void ProtezHandADC::setStateADC(PrHand_GLB_ADCState st)
 {
 	GLB_ADC_state = st;
 }
-PrHand_GLB_ADCState ProtezHandADC::getStateADC()
+PrHand_GLB_ADCState ProtezHandADC::getEnabledADC()
 {
 	for (auto &motor : Motor) {
 		if (motor.getEnabledADC() == _ADC_Motor_Enable)  return GLB_ADC_state = _ADC_NoConfigured;
 	}
 	return GLB_ADC_state = _ADC_Disable;
+}
+PrHand_GLB_ADCState ProtezHandADC::getStateADC()
+{
+	return GLB_ADC_state;
 }
 
 

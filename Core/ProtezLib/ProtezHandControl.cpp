@@ -44,7 +44,7 @@ uint32_t PrHand_Motor_typedef::getWorkDelay()
 {
 	return CNT_WorkDelay;
 }
-uint32_t PrHand_Motor_typedef::getTargetSide()
+PrHand_MoveState PrHand_Motor_typedef::getTargetSide()
 {
 	return targetSide;
 }

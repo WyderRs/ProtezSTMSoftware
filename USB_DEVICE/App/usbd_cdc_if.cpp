@@ -277,11 +277,11 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 
-  uint8_t dada[100] = {0, };
-  for(uint8_t j = 0; j < *Len; j++)
-  {
-	  dada[j] = Buf[j];
-  }
+//  uint8_t dada[100] = {0, };
+//  for(uint8_t j = 0; j < *Len; j++)
+//  {
+//	  dada[j] = Buf[j];
+//  }
 
   if ((Buf[0] == PR_PROTOCOL_START_PACK.first) && (Buf[1] == PR_PROTOCOL_START_PACK.second))
   {
@@ -294,12 +294,12 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 		  if ((Buf[i - 1] == PR_PROTOCOL_STOP_PACK.first) && (Buf[i] == PR_PROTOCOL_STOP_PACK.second)) {
 			  buffer.pop_back();
 
-			  ProtezHandUsbProtocol::readRawPack(&buffer);
+			  ProtezHandUsbProtocol::readRawPack(buffer);
 			  buffer.clear();
 			  flag_start = false;
 			  break;
 		  }
-		  buffer.push_back(Buf[i]);
+		  else buffer.push_back(Buf[i]);
 	  }
   }
 
@@ -323,7 +323,7 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
   uint8_t result = USBD_OK;
   /* USER CODE BEGIN 7 */
   USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
-  if (hcdc->TxState != 0){
+  if (hcdc->TxState != 0) {
     return USBD_BUSY;
   }
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
@@ -331,7 +331,6 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
   /* USER CODE END 7 */
   return result;
 }
-
 /**
   * @brief  CDC_TransmitCplt_FS
   *         Data transmitted callback

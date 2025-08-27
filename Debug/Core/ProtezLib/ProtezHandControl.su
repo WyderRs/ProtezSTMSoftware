@@ -5,7 +5,7 @@
 ../Core/ProtezLib/ProtezHandControl.cpp:35:10:uint32_t PrHand_Motor_typedef::getPWM()	16	static
 ../Core/ProtezLib/ProtezHandControl.cpp:39:10:uint32_t PrHand_Motor_typedef::getWorkTime()	16	static
 ../Core/ProtezLib/ProtezHandControl.cpp:43:10:uint32_t PrHand_Motor_typedef::getWorkDelay()	16	static
-../Core/ProtezLib/ProtezHandControl.cpp:47:10:uint32_t PrHand_Motor_typedef::getTargetSide()	16	static
+../Core/ProtezLib/ProtezHandControl.cpp:47:18:PrHand_MoveState PrHand_Motor_typedef::getTargetSide()	16	static
 ../Core/ProtezLib/ProtezHandControl.cpp:51:22:PrHand_MotorSetState PrHand_Motor_typedef::CheckWorkInterval()	16	static
 ../Core/ProtezLib/ProtezHandControl.cpp:60:6:static void PrHand_Motor_typedef::setGLBCounter(uint32_t)	16	static
 ../Core/ProtezLib/ProtezHandControl.cpp:64:10:static uint32_t PrHand_Motor_typedef::getGLBCounter()	4	static
