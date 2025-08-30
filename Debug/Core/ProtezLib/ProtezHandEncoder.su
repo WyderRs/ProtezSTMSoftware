@@ -1,0 +1,15 @@
+../Core/ProtezLib/ProtezHandEncoder.cpp:14:1:ProtezHandEncoder::ProtezHandEncoder()	16	static
+../Core/ProtezLib/ProtezHandEncoder.cpp:18:1:ProtezHandEncoder::~ProtezHandEncoder()	16	static
+../Core/ProtezLib/ProtezHandEncoder.cpp:21:6:void ProtezHandEncoder::setCounter(uint32_t)	16	static
+../Core/ProtezLib/ProtezHandEncoder.cpp:25:10:uint32_t ProtezHandEncoder::getCounter()	16	static
+../Core/ProtezLib/ProtezHandEncoder.cpp:29:6:void ProtezHandEncoder::setTimePoint(uint32_t)	16	static
+../Core/ProtezLib/ProtezHandEncoder.cpp:33:10:uint32_t ProtezHandEncoder::getTimePoint()	16	static
+../Core/ProtezLib/ProtezHandEncoder.cpp:37:6:void ProtezHandEncoder::setSide(encSide)	16	static
+../Core/ProtezLib/ProtezHandEncoder.cpp:41:9:encSide ProtezHandEncoder::getSide()	16	static
+../Core/ProtezLib/ProtezHandEncoder.cpp:45:6:void ProtezHandEncoder::setAllGPIO(GPIO_TypeDef*, uint16_t, GPIO_TypeDef*, uint16_t, GPIO_PinState)	24	static
+../Core/ProtezLib/ProtezHandEncoder.cpp:53:15:GPIO_TypeDef* ProtezHandEncoder::getPORTmain()	16	static
+../Core/ProtezLib/ProtezHandEncoder.cpp:57:10:uint16_t ProtezHandEncoder::getPINmain()	16	static
+../Core/ProtezLib/ProtezHandEncoder.cpp:61:15:GPIO_TypeDef* ProtezHandEncoder::getPORsup()	16	static
+../Core/ProtezLib/ProtezHandEncoder.cpp:66:10:uint16_t ProtezHandEncoder::getPINsup()	16	static
+../Core/ProtezLib/ProtezHandEncoder.cpp:71:6:static void ProtezHandEncoder::setCntPoints(uint32_t)	16	static
+../Core/ProtezLib/ProtezHandEncoder.cpp:75:10:static uint32_t ProtezHandEncoder::getCntPoint()	4	static

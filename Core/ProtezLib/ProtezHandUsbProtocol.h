@@ -67,8 +67,8 @@
 #define PR_PROTOCOL_PACK_ADC_START_pair 	std::pair<uint8_t, uint8_t>(0xEE, 0xDD)
 #define PR_PROTOCOL_PACK_ADC_STOP_pair 		std::pair<uint8_t, uint8_t>(0xCC, 0xBB)
 
-#define PR_PROTOCOL_USART_DATA_START_pair 	std::pair<uint8_t, uint8_t>(0xCA, 0xF5)
-#define PR_PROTOCOL_USART_DATA_STOP_pair 	std::pair<uint8_t, uint8_t>(0xBD, 0x7D)
+#define PR_PROTOCOL_PACK_SPEED_START_pair 	std::pair<uint8_t, uint8_t>(0xAE, 0xDE)
+#define PR_PROTOCOL_PACK_SPEED_STOP_pair	std::pair<uint8_t, uint8_t>(0x1A, 0x4B)
 
 
 class ProtezHandUsbProtocol {
@@ -79,12 +79,17 @@ public:
 	static std::vector<std::pair<uint8_t, std::vector<uint8_t>>> command;
 	static std::map<uint8_t, std::vector<uint8_t>> setCommand;
 
-
 	static uint8_t PackOtherSide[500];
 
 	static TIM_HandleTypeDef* timer;
+	static uint32_t tim_tx_counter_tick;
+	static uint32_t tim_tx_counter_ms;
+	static uint32_t tim_tx_counter_s;
+
 
 	static _Bool FlagDataADC;
+	static _Bool FlagDataSPEED;
+
 	static _Bool FlagUartControl;
 
 private:

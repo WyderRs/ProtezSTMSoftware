@@ -46,6 +46,7 @@ USB_DEVICE/App/usbd_cdc_if.o: ../USB_DEVICE/App/usbd_cdc_if.cpp \
  ../USB_DEVICE/App/usbd_cdc_if.h \
  ../Core/Inc/../ProtezLib/ProtezHandControl.h \
  ../Core/Inc/../ProtezLib/ProtezHandADC.h \
+ ../Core/Inc/../ProtezLib/ProtezHandEncoder.h \
  ../Core/Inc/../ProtezLib/ProtezHandUsbProtocol.h
 ../USB_DEVICE/App/usbd_cdc_if.h:
 ../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc/usbd_cdc.h:
@@ -95,4 +96,5 @@ USB_DEVICE/App/usbd_cdc_if.o: ../USB_DEVICE/App/usbd_cdc_if.cpp \
 ../USB_DEVICE/App/usbd_cdc_if.h:
 ../Core/Inc/../ProtezLib/ProtezHandControl.h:
 ../Core/Inc/../ProtezLib/ProtezHandADC.h:
+../Core/Inc/../ProtezLib/ProtezHandEncoder.h:
 ../Core/Inc/../ProtezLib/ProtezHandUsbProtocol.h:

@@ -25,6 +25,7 @@
 #include "../ProtezLib/ProtezHandControl.h"
 #include "../ProtezLib/ProtezHandUsbProtocol.h"
 #include "../ProtezLib/ProtezHandADC.h"
+#include "../ProtezLib/ProtezHandEncoder.h"
 #include "usbd_cdc_if.h"
 #include "stdbool.h"
 #include "stm32f4xx_hal_uart.h"
@@ -33,7 +34,32 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
+/*Макросы энкодеров*/
+#define ENC_GPIO_1	GPIOB
+#define ENC_PIN_1	GPIO_PIN_10
+#define ENC_GPIO_2	GPIOB
+#define ENC_PIN_2	GPIO_PIN_14
+#define ENC_GPIO_3	GPIOB
+#define ENC_PIN_3	GPIO_PIN_13
+#define ENC_GPIO_4	GPIOC
+#define ENC_PIN_4	GPIO_PIN_5
+#define ENC_GPIO_5	GPIOC
+#define ENC_PIN_5	GPIO_PIN_3
+#define ENC_GPIO_6	GPIOC
+#define ENC_PIN_6	GPIO_PIN_1
 
+#define SUP_ENC_GPIO_1	GPIOB
+#define SUP_ENC_PIN_1	GPIO_PIN_2
+#define SUP_ENC_GPIO_2	GPIOB
+#define SUP_ENC_PIN_2	GPIO_PIN_15
+#define SUP_ENC_GPIO_3	GPIOB
+#define SUP_ENC_PIN_3	GPIO_PIN_12
+#define SUP_ENC_GPIO_4	GPIOC
+#define SUP_ENC_PIN_4	GPIO_PIN_4
+#define SUP_ENC_GPIO_5	GPIOC
+#define SUP_ENC_PIN_5	GPIO_PIN_2
+#define SUP_ENC_GPIO_6	GPIOC
+#define SUP_ENC_PIN_6	GPIO_PIN_0
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -95,13 +121,30 @@ PrHand_Motor_typedef Motor[6] =
 	PrHand_Motor_typedef(5),
 };
 ProtezHandADC PrHand_ADC(&hadc1, &htim2);
+uint32_t GLB_Time[3];
+
 
 uint32_t UsartDataCount;
 uint8_t UsartDataByte;
 uint8_t UsartRecvData[5000];
 _Bool flag_uartResending;
-_Bool flag_ComSend;
 
+typedef struct _tim_irq
+{
+	uint32_t counter_1;
+	uint32_t counter_2;
+	uint32_t counter_3;
+
+} _tim_irq;
+_tim_irq tim_irq;
+typedef struct _cnt_instrument
+{
+	uint32_t cnt_instr_1;
+	uint32_t cnt_instr_2;
+	uint32_t cnt_instr_3;
+
+} _cnt_instrument;
+_cnt_instrument cnt_instrument;
 
 
 
@@ -111,57 +154,52 @@ void ProtezInit()
 	ProtezHandUsbProtocol::setTimerTransmiter(&htim9);
 	HAL_UART_Receive_DMA(&huart6, (uint8_t*)&UsartDataByte, 1);
 
-
 	PrHand_ADC.setPoints(500);
+	ProtezHandEncoder::setCntPoints(500);
 	PrHand_ADC.setPackSizeData(20);
 
 	Motor[0].setTIM(&htim3);
 	Motor[0].setChannel({PR_CHANNEL_3, PR_CHANNEL_4}, PR_DIR_FORWARD);
+	Motor[0].cls_encoder.setAllGPIO(ENC_GPIO_1, ENC_PIN_1, SUP_ENC_GPIO_1, SUP_ENC_PIN_1, GPIO_PIN_RESET);
 	Motor[0].setADCChannel(ADC_Channel_5);
 	Motor[0].setTargetSide(PR_MS_Stop);
 	Motor[0].setPWM(0);
 
 	Motor[1].setTIM(&htim4);
 	Motor[1].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
+	Motor[1].cls_encoder.setAllGPIO(ENC_GPIO_2, ENC_PIN_2, SUP_ENC_GPIO_2, SUP_ENC_PIN_2, GPIO_PIN_SET);
 	Motor[1].setADCChannel(ADC_Channel_3);
 	Motor[1].setTargetSide(PR_MS_Stop);
 	Motor[1].setPWM(0);
 
 	Motor[2].setTIM(&htim4);
 	Motor[2].setChannel({PR_CHANNEL_3, PR_CHANNEL_4}, PR_DIR_FORWARD);
+	Motor[2].cls_encoder.setAllGPIO(ENC_GPIO_3, ENC_PIN_3, SUP_ENC_GPIO_3, SUP_ENC_PIN_3, GPIO_PIN_SET);
 	Motor[2].setADCChannel(ADC_Channel_4);
 	Motor[2].setTargetSide(PR_MS_Stop);
 	Motor[2].setPWM(0);
 
 	Motor[3].setTIM(&htim1);
 	Motor[3].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
+	Motor[3].cls_encoder.setAllGPIO(ENC_GPIO_4, ENC_PIN_4, SUP_ENC_GPIO_4, SUP_ENC_PIN_4, GPIO_PIN_SET);
 	Motor[3].setADCChannel(ADC_Channel_2);
 	Motor[3].setTargetSide(PR_MS_Stop);
 	Motor[3].setPWM(0);
 
 	Motor[4].setTIM(&htim3);
 	Motor[4].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
+	Motor[4].cls_encoder.setAllGPIO(ENC_GPIO_5, ENC_PIN_5, SUP_ENC_GPIO_5, SUP_ENC_PIN_5, GPIO_PIN_SET);
 	Motor[4].setADCChannel(ADC_Channel_7);
 	Motor[4].setTargetSide(PR_MS_Stop);
 	Motor[4].setPWM(0);
 
 	Motor[5].setTIM(&htim5);
 	Motor[5].setChannel({PR_CHANNEL_1, PR_CHANNEL_2}, PR_DIR_FORWARD);
+	Motor[5].cls_encoder.setAllGPIO(ENC_GPIO_6, ENC_PIN_6, SUP_ENC_GPIO_6, SUP_ENC_PIN_6, GPIO_PIN_SET);
 	Motor[5].setADCChannel(ADC_Channel_6);
 	Motor[5].setTargetSide(PR_MS_Stop);
 	Motor[5].setPWM(0);
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -219,17 +257,16 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   ProtezInit();
-  PrHand_Motor_typedef::SetGLBTIM(&htim11);
+  PrHand_Motor_typedef::SetTIMHandlerInstr(&htim11);
 
   DRIVER_CTRL_ON;
 //  DRIVER_CTRL_OFF;
+  HAL_TIM_Base_Start_IT(&htim1);
+  HAL_TIM_Base_Start_IT(&htim10);
+//  PrHand_Motor_typedef::StartTIM(&htim3);
 
+  PrHand_Motor_typedef::StartTIMHandlerInstr();
 
-  PrHand_Motor_typedef::StartTIM(&htim1);
-  PrHand_Motor_typedef::StartTIM(&htim3);
-
-
-  PrHand_Motor_typedef::StartGLBTIM();
 
 
 
@@ -999,14 +1036,6 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 
 
 }
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-	//-----------------------------------------------------------------------------------------------------------------------------------//
-
-	//-----------------------------------------------------------------------------------------------------------------------------------//
-}
-
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance == TIM1)
@@ -1015,6 +1044,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 	else if (htim->Instance == TIM2)
 	{
+
+		/*Сборка данных с энкодера*/
+
 
 	}
 	else if (htim->Instance == TIM3)
@@ -1031,20 +1063,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 	else if (htim->Instance == TIM9) // ТАЙМЕР ОТВЕЧАЮЩИЙ ЗА ОТПРАВКУ
 	{
-//		if (!ProtezHandUsbProtocol::Queue_SendData.empty())
-//		{
-//
-//			uint8_t state = CDC_Transmit_FS(&ProtezHandUsbProtocol::Queue_SendData.front().first, ProtezHandUsbProtocol::Queue_SendData.front().second);
-//			if (state == USBD_OK)
-//			{
-//				ProtezHandUsbProtocol::popQueueElement();
-//			}
-//		}
-
+		ProtezHandUsbProtocol::tim_tx_counter_tick++;
+		/*Отправляем данные АЦП*/
+		/*********************************************/
+		/*********************************************/
 		if (ProtezHandUsbProtocol::FlagDataADC)
 		{
-
-
 			if (ProtezHandUsbProtocol::FlagUartControl)
 			{
 				HAL_UART_Transmit_IT(&huart6, (uint8_t*)&ProtezHandADC::DataADC, PrHand_ADC.getPackSizeData() * 2);
@@ -1053,13 +1077,75 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			{
 				CDC_Transmit_FS((uint8_t*)&ProtezHandADC::DataADC, PrHand_ADC.getPackSizeData() * 2);
 			}
-
-
-
-
-
 			ProtezHandUsbProtocol::FlagDataADC = false;
 		}
+		/*********************************************/
+		/*Отправляем данные скорости вращения вала двигателя*/
+		else if (ProtezHandUsbProtocol::FlagDataSPEED)
+		{
+			if (ProtezHandUsbProtocol::FlagUartControl)
+			{
+//				HAL_UART_Transmit_IT(&huart6, (uint8_t*)&ProtezHandADC::DataADC, PrHand_ADC.getPackSizeData() * 2);
+			}
+			else
+			{
+//				CDC_Transmit_FS((uint8_t*)&ProtezHandADC::DataADC, PrHand_ADC.getPackSizeData() * 2);
+			}
+		}
+		/*********************************************/
+		/*********************************************/
+		/***************COLLECTING DATA***************/
+		if (tim_irq.counter_1 == (PrHand_Motor_typedef::MaxTimeInterval / ProtezHandEncoder::getCntPoint()))
+		{
+			tim_irq.counter_1 = 0;
+			for (auto &mot : Motor)
+			{
+				if (mot.getState() == _Working)
+				{
+					auto x = mot.cls_encoder.getCounter();
+					auto y = mot.cls_encoder.getTimePoint();
+					mot.cls_encoder.DataSPEED[mot.cls_encoder.indexDataSPEED] = (x - cnt_instrument.cnt_instr_1) / (y - cnt_instrument.cnt_instr_2 + 0.00001) * 10000.0;
+					mot.cls_encoder.indexDataSPEED++;
+
+
+					cnt_instrument.cnt_instr_1 = x;
+					cnt_instrument.cnt_instr_2 = y;
+				}
+			}
+		}
+		/*********************************************/
+		/*********************************************/
+		if (ProtezHandUsbProtocol::tim_tx_counter_tick >= 100)	// 1ms
+		{
+			ProtezHandUsbProtocol::tim_tx_counter_tick = 0;
+			ProtezHandUsbProtocol::tim_tx_counter_ms++;
+			tim_irq.counter_1++;
+		}
+		if (ProtezHandUsbProtocol::tim_tx_counter_ms >= 1000)	// 1s
+		{
+			ProtezHandUsbProtocol::tim_tx_counter_ms = 0;
+			ProtezHandUsbProtocol::tim_tx_counter_s++;
+		}
+		/*********************************************/
+		/*********************************************/
+	}
+	else if (htim->Instance == TIM10)
+	{
+		if ((GLB_Time[2] != 0) && (GLB_Time[2] % 1000) == 0)
+		{
+			GLB_Time[0]++;		// 1 s
+		}
+		if ((GLB_Time[2] != 0) && (GLB_Time[2] % 10) == 0)
+		{
+			GLB_Time[1]++;		// 1 ms
+		}
+		GLB_Time[2]++;			// 100 us
+
+
+
+//		if (GLB_Time[2] == 65535) GLB_Time[2] = 0;	// 0.01 second
+//		if (GLB_Time[1] == 65535) GLB_Time[1] = 0;	// 0.1 second
+//		if (GLB_Time[0] == 65535) GLB_Time[0] = 0;	// 1.0 second
 	}
 	else if (htim->Instance == TIM11) // ТАЙМЕР ОБРАБАТЫВАЮЩИЙ НАСТРОЙКУ И ВКЛЮЧЕНИЕ ДВИГАТЕЛЕЙ
 	{
@@ -1081,6 +1167,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 					if ((PrHand_ADC.getStateADC() == _ADC_Configured) /*|| (Feedback Enabled)*/)
 					{
 						ProtezHandUsbProtocol::TimerTX_Start();
+						motor.cls_encoder.indexDataSPEED = 2;
 					}
 
 					if (PrHand_ADC.getStateADC() == _ADC_Configured)
@@ -1121,17 +1208,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 				}
 			}
 		}
-		PrHand_Motor_typedef::setGLBCounter((PrHand_Motor_typedef::getGLBCounter() + 1));
+		PrHand_Motor_typedef::setTIMHandlerInstrCounter((PrHand_Motor_typedef::getTIMHandlerInstrCounter() + 1));
 	}
-
 }
-
-
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(huart->Instance == USART6) {
 		UsartRecvData[UsartDataCount] = UsartDataByte;
+
+		/*************************************************************************************************/
 		/*RecvCommand*/
 		if ((UsartRecvData[UsartDataCount - 1] == PR_PROTOCOL_USART_START.first)
 				&& (UsartRecvData[UsartDataCount] == PR_PROTOCOL_USART_START.second)) {
@@ -1162,8 +1248,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			ProtezHandUsbProtocol::UsartProtocol::UsartCommand();
 			UsartDataCount = 0;
 		}
-
-		/*RecvData*/
+		/*************************************************************************************************/
+		/*ADC_DATA*/
 		else if ((UsartRecvData[UsartDataCount - 1] == PR_PROTOCOL_PACK_ADC_START_pair.first)
 				&& (UsartRecvData[UsartDataCount] == PR_PROTOCOL_PACK_ADC_START_pair.second)) {
 			flag_uartResending = true;
@@ -1184,23 +1270,48 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			}
 			else UsartDataCount++;
 		}
+		/*************************************************************************************************/
+		/*SPEED_DATA*/
+//		else if ((UsartRecvData[UsartDataCount - 1] == PR_PROTOCOL_PACK_ADC_START_pair.first)
+//				&& (UsartRecvData[UsartDataCount] == PR_PROTOCOL_PACK_ADC_START_pair.second)) {
+//			flag_uartResending = true;
+//			UsartDataCount++;
+//		}
+//		else if ((UsartRecvData[UsartDataCount - 1] == PR_PROTOCOL_PACK_ADC_STOP_pair.first)
+//				&& (UsartRecvData[UsartDataCount] == PR_PROTOCOL_PACK_ADC_STOP_pair.second)) {
+//		}
 		else UsartDataCount++;
-
-
-
-
-
-
-
-
-
 
 	}
 }
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-//	for (uint32_t i = 0; i < 500; i++) ProtezHandUsbProtocol::PackOtherSide[i] = 0;
+	PrHand_Motor_typedef *t_mot = 0;
+	for (auto &mot : Motor) {
+		if (mot.cls_encoder.getPINmain() == GPIO_Pin) {
+			t_mot = &mot;
+			break;
+		}
+	}
+
+	if (HAL_GPIO_ReadPin(t_mot->cls_encoder.getPORsup(), t_mot->cls_encoder.getPINsup()) == t_mot->cls_encoder.PositiveSideRotate)
+	{
+		auto x = t_mot->cls_encoder.getCounter() + 1;
+		t_mot->cls_encoder.setCounter(x);
+		t_mot->cls_encoder.setTimePoint(GLB_Time[2]);
+
+	}
+	else
+	{
+
+	}
+
+	/*************************************************************************************************/
+
+
 }
+
+
 
 /* USER CODE END 4 */
 

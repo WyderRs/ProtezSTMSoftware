@@ -18,11 +18,11 @@ UART_HandleTypeDef *ProtezHandUsbProtocol::ProtezUART;
 uint8_t PR_PROTOCOL_PACK_ADC_START[2] = {0xEE, 0xDD};
 uint8_t PR_PROTOCOL_PACK_ADC_STOP[2] = {0xCC, 0xBB};
 
+uint8_t PR_PROTOCOL_PACK_SPEED_START[2] = {0xAE, 0xDE};
+uint8_t PR_PROTOCOL_PACK_SPEED_STOP[2] = {0x1A, 0x4B};
+
 uint8_t PR_PROTOCOL_PACK_FEEDBACK_START[2] = {0x44, 0xDD};
 uint8_t PR_PROTOCOL_PACK_FEEDBACK_STOP[2] = {0x77, 0xCC};
-
-uint8_t PR_PROTOCOL_USART_DATA_START[2] = {0xCA, 0xF5};
-uint8_t PR_PROTOCOL_USART_DATA_STOP[2] = {0xBD, 0x7D};
 
 
 std::vector<std::vector<uint8_t>> ProtezHandUsbProtocol::subPack;
@@ -30,8 +30,14 @@ std::vector<std::pair<uint8_t, std::vector<uint8_t>>> ProtezHandUsbProtocol::com
 std::map<uint8_t, std::vector<uint8_t>> ProtezHandUsbProtocol::setCommand;
 std::map<uint8_t, std::vector<uint8_t>> ProtezHandUsbProtocol::UsartProtocol::setUsartCommand;
 
+
 TIM_HandleTypeDef* ProtezHandUsbProtocol::timer;
+uint32_t ProtezHandUsbProtocol::tim_tx_counter_tick = 0;
+uint32_t ProtezHandUsbProtocol::tim_tx_counter_ms = 0;
+uint32_t ProtezHandUsbProtocol::tim_tx_counter_s = 0;
+
 _Bool ProtezHandUsbProtocol::FlagDataADC;
+_Bool ProtezHandUsbProtocol::FlagDataSPEED;
 _Bool ProtezHandUsbProtocol::FlagUartControl;
 
 uint8_t ProtezHandUsbProtocol::PackOtherSide[500];
@@ -191,6 +197,16 @@ void ProtezHandUsbProtocol::selectorCommand()
 
     	ProtezHandUsbProtocol::setCommands();
     }
+
+    PrHand_Motor_typedef::MaxTimeInterval = 0;
+    for (auto &mot : Motor)
+    {
+    	if (mot.getWorkTime() * 10 > PrHand_Motor_typedef::MaxTimeInterval)
+    	{
+    		PrHand_Motor_typedef::MaxTimeInterval = mot.getWorkTime() * 10;
+    	}
+    }
+
     ProtezHandUsbProtocol::subPack.clear();
 }
 
@@ -309,23 +325,33 @@ void ProtezHandUsbProtocol::setCommands()
 	//		if (numMotor != -1) Motor[numMotor].getID();
 
 
-			if (motDir != -1) Motor[numMotor].setTargetSide((PrHand_MoveState)motDir);
-			if (Motor[numMotor].getState() != _Working) {
+			if (motDir != -1)
+			{
+				Motor[numMotor].setTargetSide((PrHand_MoveState)motDir);
+			}
+			if (Motor[numMotor].getState() != _Working)
+			{
 				if (motPWM != -1)
 				{
-					if ((motDir == PR_MS_Right) && (!ProtezHandUsbProtocol::FlagUartControl)) Motor[numMotor].setPWM(8 * 10);
+					if ((motDir == PR_MS_Right) && (!ProtezHandUsbProtocol::FlagUartControl))
+					{
+						Motor[numMotor].setPWM(8 * 10);
+					}
 					else Motor[numMotor].setPWM(motPWM);
 
-
 					if ((Motor[numMotor].getPWM() != 0) && (Motor[numMotor].getWorkTime() != 0))
+					{
 						Motor[numMotor].setState(_Configured);
+					}
 				}
 				if (motTime != -1)
 				{
 					Motor[numMotor].setWorkTime(motTime);
 
 					if ((Motor[numMotor].getPWM() != 0) && (Motor[numMotor].getWorkTime() != 0))
+					{
 						Motor[numMotor].setState(_Configured);
+					}
 				}
 				if (motDelay != -1)
 					Motor[numMotor].setWorkDelay(motDelay);
@@ -351,6 +377,26 @@ void ProtezHandUsbProtocol::setCommands()
 				 *2. Старт двигатель
 				 *3. Старт все двигатели
 				 *4. Стоп все двигатели */
+
+
+
+
+//				for (uint8_t i = 0; i < 6; i++) sideFinger[i] = PR_MS_Stop;
+//				for (auto &x : Motor)
+//				{
+//					PrHand_MoveState side = x.getTargetSide();
+//					sideFinger[x.getID()] = side;
+//					if (ProtezHandUsbProtocol::FlagUartControl)
+//					{
+//						numThisMotor++;
+//					}
+//					else if (side == PR_MS_Left)
+//					{
+//						numThisMotor++;
+//					}
+//
+//				}
+
 				if (motRUN & PR_VAL_RUNNING_STOP) Motor[numMotor].Stop();
 				else if (motRUN & PR_VAL_RUNNING_START) {
 					if (Motor[numMotor].getState() == _Configured) {
@@ -498,6 +544,9 @@ void ProtezHandUsbProtocol::setTimerTransmiter(TIM_HandleTypeDef* tim)
 }
 void ProtezHandUsbProtocol::TimerTX_Start()
 {
+	tim_tx_counter_tick = 0;
+	tim_tx_counter_ms = 0;
+	tim_tx_counter_s = 0;
 	HAL_TIM_Base_Start_IT(timer);
 }
 void ProtezHandUsbProtocol::TimerTX_Stop()
@@ -532,15 +581,6 @@ void ProtezHandUsbProtocol::UsartProtocol::transmitUartADCStopPack()
 {
 	HAL_UART_Transmit_IT(ProtezUART, PR_PROTOCOL_PACK_ADC_STOP, 2);
 }
-void ProtezHandUsbProtocol::UsartProtocol::transmitUartStartPack()
-{
-	HAL_UART_Transmit_IT(ProtezUART, PR_PROTOCOL_USART_DATA_START, 2);
-}
-void ProtezHandUsbProtocol::UsartProtocol::transmitUartStopPack()
-{
-	HAL_UART_Transmit_IT(ProtezUART, PR_PROTOCOL_USART_DATA_STOP, 2);
-}
-
 
 
 

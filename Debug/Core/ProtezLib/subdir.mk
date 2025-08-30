@@ -1,22 +1,25 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (12.3.rel1)
+# Toolchain: GNU Tools for STM32 (11.3.rel1)
 ################################################################################
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
 ../Core/ProtezLib/ProtezHandADC.cpp \
 ../Core/ProtezLib/ProtezHandControl.cpp \
+../Core/ProtezLib/ProtezHandEncoder.cpp \
 ../Core/ProtezLib/ProtezHandUsbProtocol.cpp 
 
 OBJS += \
 ./Core/ProtezLib/ProtezHandADC.o \
 ./Core/ProtezLib/ProtezHandControl.o \
+./Core/ProtezLib/ProtezHandEncoder.o \
 ./Core/ProtezLib/ProtezHandUsbProtocol.o 
 
 CPP_DEPS += \
 ./Core/ProtezLib/ProtezHandADC.d \
 ./Core/ProtezLib/ProtezHandControl.d \
+./Core/ProtezLib/ProtezHandEncoder.d \
 ./Core/ProtezLib/ProtezHandUsbProtocol.d 
 
 
@@ -29,7 +32,7 @@ Core/ProtezLib/ProtezHandControl.null: ../Core/ProtezLib/ProtezHandControl.h Cor
 clean: clean-Core-2f-ProtezLib
 
 clean-Core-2f-ProtezLib:
-	-$(RM) ./Core/ProtezLib/ProtezHandADC.cyclo ./Core/ProtezLib/ProtezHandADC.d ./Core/ProtezLib/ProtezHandADC.o ./Core/ProtezLib/ProtezHandADC.su ./Core/ProtezLib/ProtezHandControl.cyclo ./Core/ProtezLib/ProtezHandControl.d ./Core/ProtezLib/ProtezHandControl.null ./Core/ProtezLib/ProtezHandControl.o ./Core/ProtezLib/ProtezHandControl.su ./Core/ProtezLib/ProtezHandUsbProtocol.cyclo ./Core/ProtezLib/ProtezHandUsbProtocol.d ./Core/ProtezLib/ProtezHandUsbProtocol.o ./Core/ProtezLib/ProtezHandUsbProtocol.su
+	-$(RM) ./Core/ProtezLib/ProtezHandADC.cyclo ./Core/ProtezLib/ProtezHandADC.d ./Core/ProtezLib/ProtezHandADC.o ./Core/ProtezLib/ProtezHandADC.su ./Core/ProtezLib/ProtezHandControl.cyclo ./Core/ProtezLib/ProtezHandControl.d ./Core/ProtezLib/ProtezHandControl.null ./Core/ProtezLib/ProtezHandControl.o ./Core/ProtezLib/ProtezHandControl.su ./Core/ProtezLib/ProtezHandEncoder.cyclo ./Core/ProtezLib/ProtezHandEncoder.d ./Core/ProtezLib/ProtezHandEncoder.o ./Core/ProtezLib/ProtezHandEncoder.su ./Core/ProtezLib/ProtezHandUsbProtocol.cyclo ./Core/ProtezLib/ProtezHandUsbProtocol.d ./Core/ProtezLib/ProtezHandUsbProtocol.o ./Core/ProtezLib/ProtezHandUsbProtocol.su
 
 .PHONY: clean-Core-2f-ProtezLib
 

@@ -10,6 +10,10 @@
 #include "stm32f4xx_hal.h"
 #include "ProtezHandUsbProtocol.h"
 #include "ProtezHandADC.h"
+#include "ProtezHandEncoder.h"
+
+
+
 
 #define DRIVER_CTRL_GPIO	GPIOA
 #define DRIVER_CTRL_PIN		GPIO_PIN_15
@@ -77,6 +81,7 @@ class PrHand_Motor_typedef
 private:
 	uint8_t id;
     TIM_HandleTypeDef *TIM;
+
     static TIM_HandleTypeDef* GLBTimer;
     static uint32_t GLBTimerCounter;
     uint32_t CH[2];
@@ -129,16 +134,15 @@ public:
 //    static void setStateADC(PrHand_GLB_ADCState);	/*Установка состояния АЦП.*/
 //    static PrHand_GLB_ADCState getStateADC();		/*Возвращает текущее состояние АЦП.*/
 
-    static void SetGLBTIM(TIM_HandleTypeDef*);		/*Установка глобального таймера.*/
-    static void StartGLBTIM();						/*Запуск глобального таймера.*/
-    static void StopGLBTIM();						/*Остановка глобального таймера.*/
-    static void setGLBCounter(uint32_t);			/*Установка значения глобального таймера.*/
-    static uint32_t getGLBCounter();				/*Возвращается занчение глобального таймера.*/
-
-    static void StartTIM(TIM_HandleTypeDef*);		/*Запуск таймера двигателя.*/
-    static void StopTIM(TIM_HandleTypeDef*);		/*Остановка таймера двигателя.*/
+    static void SetTIMHandlerInstr(TIM_HandleTypeDef*);		/*Установка глобального таймера.*/
+    static void StartTIMHandlerInstr();						/*Запуск глобального таймера.*/
+    static void StopTIMHandlerInstr();						/*Остановка глобального таймера.*/
+    static void setTIMHandlerInstrCounter(uint32_t);			/*Установка значения глобального таймера.*/
+    static uint32_t getTIMHandlerInstrCounter();				/*Возвращается занчение глобального таймера.*/
 
 
+
+    ProtezHandEncoder cls_encoder;					/*Класс энкодера*/
     std::pair<PrHand_MotCh, PrHand_MotCh> getChannel(); /*Возвращает пару номеров каналов.*/
     uint32_t getPWM();			/*Возвращает текущий ШИМ.*/
     uint32_t getWorkTime();		/*Возвращает установленное время работы.*/
@@ -147,6 +151,10 @@ public:
 
     PrHand_MotorSetState getState();		 /*Возвращает текущее состояние двигателя.*/
     PrHand_MotorSetState CheckWorkInterval();/*Проверяет интервал работы. Когда нужно запустить двигатель и когда его остановить.*/
+
+    static uint32_t MaxTimeInterval;
+
+
 private:
     void insert_pwm();						 /*Устанавливает ШИМ и направление.*/
 };

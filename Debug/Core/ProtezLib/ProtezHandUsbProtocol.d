@@ -43,7 +43,8 @@ Core/ProtezLib/ProtezHandUsbProtocol.o: \
  ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_core.h \
  ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h \
  ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h \
- ../Core/ProtezLib/ProtezHandControl.h ../Core/ProtezLib/ProtezHandADC.h
+ ../Core/ProtezLib/ProtezHandControl.h ../Core/ProtezLib/ProtezHandADC.h \
+ ../Core/ProtezLib/ProtezHandEncoder.h
 ../Core/ProtezLib/ProtezHandUsbProtocol.h:
 ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h:
 ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f411xe.h:
@@ -90,3 +91,4 @@ Core/ProtezLib/ProtezHandUsbProtocol.o: \
 ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h:
 ../Core/ProtezLib/ProtezHandControl.h:
 ../Core/ProtezLib/ProtezHandADC.h:
+../Core/ProtezLib/ProtezHandEncoder.h:

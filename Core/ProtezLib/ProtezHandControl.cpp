@@ -14,6 +14,8 @@ extern TIM_HandleTypeDef htim11;
 TIM_HandleTypeDef* PrHand_Motor_typedef::GLBTimer;
 uint32_t PrHand_Motor_typedef::GLBTimerCounter = 0;
 
+uint32_t PrHand_Motor_typedef::MaxTimeInterval = 0;
+
 PrHand_Motor_typedef::PrHand_Motor_typedef(uint8_t _id) : id(_id)
 {
 	id = _id;
@@ -57,11 +59,11 @@ PrHand_MotorSetState PrHand_Motor_typedef::CheckWorkInterval()
 	else return _Launched;
 }
 /*GLOBAL FUNCTION*/
-void PrHand_Motor_typedef::setGLBCounter(uint32_t cnt)
+void PrHand_Motor_typedef::setTIMHandlerInstrCounter(uint32_t cnt)
 {
 	GLBTimerCounter = cnt;
 }
-uint32_t PrHand_Motor_typedef::getGLBCounter()
+uint32_t PrHand_Motor_typedef::getTIMHandlerInstrCounter()
 {
 	return GLBTimerCounter;
 }
@@ -219,25 +221,17 @@ PrHand_MotorADCState PrHand_Motor_typedef::getEnabledADC()
 //	}
 //	return GLB_ADC_state = _ADC_Disable;
 //}
-void PrHand_Motor_typedef::SetGLBTIM(TIM_HandleTypeDef* tim)
+void PrHand_Motor_typedef::SetTIMHandlerInstr(TIM_HandleTypeDef* tim)
 {
 	GLBTimer = tim;
 }
-void PrHand_Motor_typedef::StartGLBTIM()
+void PrHand_Motor_typedef::StartTIMHandlerInstr()
 {
 	HAL_TIM_Base_Start_IT(GLBTimer);
 }
-void PrHand_Motor_typedef::StopGLBTIM()
+void PrHand_Motor_typedef::StopTIMHandlerInstr()
 {
 	HAL_TIM_Base_Stop_IT(GLBTimer);
-}
-void PrHand_Motor_typedef::StartTIM(TIM_HandleTypeDef* tim)
-{
-	HAL_TIM_Base_Start_IT(GLBTimer);
-}
-void PrHand_Motor_typedef::StopTIM(TIM_HandleTypeDef* tim)
-{
-	HAL_TIM_Base_Stop_IT(tim);
 }
 //static void StartADC();
 //static void StopADC();

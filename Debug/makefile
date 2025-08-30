@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (12.3.rel1)
+# Toolchain: GNU Tools for STM32 (11.3.rel1)
 ################################################################################
 
 -include ../makefile.init
@@ -26,9 +26,6 @@ endif
 ifneq ($(strip $(C++_DEPS)),)
 -include $(C++_DEPS)
 endif
-ifneq ($(strip $(CCM_DEPS)),)
--include $(CCM_DEPS)
-endif
 ifneq ($(strip $(C_UPPER_DEPS)),)
 -include $(C_UPPER_DEPS)
 endif
@@ -40,12 +37,6 @@ ifneq ($(strip $(S_DEPS)),)
 endif
 ifneq ($(strip $(S_UPPER_DEPS)),)
 -include $(S_UPPER_DEPS)
-endif
-ifneq ($(strip $(CXXM_DEPS)),)
--include $(CXXM_DEPS)
-endif
-ifneq ($(strip $(C++M_DEPS)),)
--include $(C++M_DEPS)
 endif
 ifneq ($(strip $(C_DEPS)),)
 -include $(C_DEPS)
@@ -89,8 +80,8 @@ all: main-build
 main-build: Protez_v_5.0.elf secondary-outputs
 
 # Tool invocations
-Protez_v_5.0.elf Protez_v_5.0.map: $(OBJS) $(USER_OBJS) C:\ProtezHolder\ProtezSTMSoftware\STM32F411RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "Protez_v_5.0.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\ProtezHolder\ProtezSTMSoftware\STM32F411RETX_FLASH.ld" -Wl,-Map="Protez_v_5.0.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+Protez_v_5.0.elf Protez_v_5.0.map: $(OBJS) $(USER_OBJS) C:\Users\Roman\Desktop\ProtezHolder\ProtezSTMSoftware_alt\ProtezSTMSoftware\STM32F411RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "Protez_v_5.0.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Roman\Desktop\ProtezHolder\ProtezSTMSoftware_alt\ProtezSTMSoftware\STM32F411RETX_FLASH.ld" -Wl,-Map="Protez_v_5.0.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
