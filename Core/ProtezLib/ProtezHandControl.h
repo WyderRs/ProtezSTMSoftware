@@ -153,7 +153,7 @@ public:
     PrHand_MotorSetState CheckWorkInterval();/*Проверяет интервал работы. Когда нужно запустить двигатель и когда его остановить.*/
 
     static uint32_t MaxTimeInterval;
-
+    static uint32_t ConfiguredMotor;
 
 private:
     void insert_pwm();						 /*Устанавливает ШИМ и направление.*/

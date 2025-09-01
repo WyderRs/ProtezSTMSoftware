@@ -9,7 +9,8 @@
 
 
 uint32_t ProtezHandEncoder::cntPoints = 500;
-
+_Bool ProtezHandEncoder::fl_Enable;
+uint8_t ProtezHandEncoder::ImpulsData[500];
 
 ProtezHandEncoder::ProtezHandEncoder()
 {
@@ -67,16 +68,17 @@ uint16_t ProtezHandEncoder::getPINsup()
 {
 	return PIN_sup;
 }
-/************************STATIC************************/
-void ProtezHandEncoder::setCntPoints(uint32_t _cntPoints)
+void ProtezHandEncoder::setEnable(_Bool _fl_Enable)
 {
-	cntPoints = _cntPoints;
+	fl_Enable = _fl_Enable;
 }
-uint32_t ProtezHandEncoder::getCntPoint()
+/*Возвращает разрешено ли работать с энкодером*/
+_Bool ProtezHandEncoder::getEnable()
 {
-	return cntPoints;
+	return fl_Enable;
 }
 
+/************************STATIC************************/
 
 
 

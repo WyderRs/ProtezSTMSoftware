@@ -37,6 +37,9 @@ private:
 	GPIO_TypeDef *PORT_sup;
 	uint16_t PIN_sup;
 
+	static _Bool fl_Enable; /*Флаг инициализации работы энкодера*/
+
+
 public:
 	ProtezHandEncoder();
 	~ProtezHandEncoder();
@@ -63,12 +66,10 @@ public:
 	GPIO_TypeDef* getPORsup();
 	/*Возвращает номер вспомогательного вывода энкодера*/
 	uint16_t getPINsup();
-	/*Установка количества измеряемых точек в секунду*/
-	static void setCntPoints(uint32_t);
-	/*Возвращает количеств измеряемы точек в секунду*/
-	static uint32_t getCntPoint();
-
-
+	/*Установка разрешения на работу с энкодером*/
+	static void setEnable(_Bool);
+	/*Возвращает разрешено ли работать с энкодером*/
+	static _Bool getEnable();
 
 
 	uint16_t DataSPEED[1000] = {0, };
@@ -76,7 +77,7 @@ public:
 	GPIO_PinState PositiveSideRotate = GPIO_PIN_RESET;
 
 	static uint32_t cntPoints;
-
+	static uint8_t ImpulsData[500];
 
 };
 

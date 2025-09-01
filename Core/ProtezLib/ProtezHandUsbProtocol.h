@@ -70,6 +70,31 @@
 #define PR_PROTOCOL_PACK_SPEED_START_pair 	std::pair<uint8_t, uint8_t>(0xAE, 0xDE)
 #define PR_PROTOCOL_PACK_SPEED_STOP_pair	std::pair<uint8_t, uint8_t>(0x1A, 0x4B)
 
+struct _datactrl
+{
+	uint8_t out_data[10000];
+	uint8_t out_sub_data[1000];
+
+	uint8_t *ptr_pack_start;
+	uint8_t *ptr_pack_stop;
+
+	uint8_t *ptr_config_start;
+	uint8_t *ptr_config_data;
+	uint8_t *ptr_config_stop;
+
+	uint8_t *ptr_adc_start;
+	uint8_t *ptr_adc_data;
+	uint8_t *ptr_adc_stop;
+
+	uint8_t *ptr_speed_start;
+	uint8_t *ptr_speed_data;
+	uint8_t *ptr_speed_stop;
+
+	uint8_t count_out_data;
+	uint8_t count_sub_data;
+};
+
+
 
 class ProtezHandUsbProtocol {
 public:
@@ -78,6 +103,8 @@ public:
 	static std::vector<std::vector<uint8_t>> subPack;
 	static std::vector<std::pair<uint8_t, std::vector<uint8_t>>> command;
 	static std::map<uint8_t, std::vector<uint8_t>> setCommand;
+
+	static _datactrl datactrl;
 
 	static uint8_t PackOtherSide[500];
 
@@ -113,8 +140,8 @@ public:
 	static void TimerTX_Start();
 	static void TimerTX_Stop();
 
-	static void transmitADCStartPack();
-	static void transmitADCStopPack();
+	static void transmitStartPackData();
+	static void transmitStopPackData();
 
 
 	class UsartProtocol
@@ -124,10 +151,8 @@ public:
 		~UsartProtocol();
 
 		static void UsartCommand();
-		static void transmitUartADCStartPack();
-		static void transmitUartADCStopPack();
-		static void transmitUartStartPack();
-		static void transmitUartStopPack();
+		static void transmitUartDataStartPack();
+		static void transmitUartDataStopPack();
 
 
 		static std::map<uint8_t, std::vector<uint8_t>> setUsartCommand;

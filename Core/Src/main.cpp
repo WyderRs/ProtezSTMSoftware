@@ -148,6 +148,7 @@ _cnt_instrument cnt_instrument;
 
 
 
+
 void ProtezInit()
 {
 	ProtezHandUsbProtocol::setUARTHandle(&huart6);
@@ -155,7 +156,6 @@ void ProtezInit()
 	HAL_UART_Receive_DMA(&huart6, (uint8_t*)&UsartDataByte, 1);
 
 	PrHand_ADC.setPoints(500);
-	ProtezHandEncoder::setCntPoints(500);
 	PrHand_ADC.setPackSizeData(20);
 
 	Motor[0].setTIM(&htim3);
@@ -1044,8 +1044,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 	else if (htim->Instance == TIM2)
 	{
+		uint8_t t = 0;
+		uint32_t x = 0;
+		for (auto &mot : Motor)
+		{
+			if (mot.getEnabledADC() == _ADC_Motor_Enable)
+			{
+				x = mot.cls_encoder.getCounter();
+				ProtezHandEncoder::ImpulsData[t++] = (uint8_t)(x & 0x0000FF);
+				ProtezHandEncoder::ImpulsData[t++] = (uint8_t)((x & 0x00FF00) >> 8);
+			}
+		}
 
-		/*Сборка данных с энкодера*/
 
 
 	}
@@ -1075,7 +1085,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			}
 			else
 			{
-				CDC_Transmit_FS((uint8_t*)&ProtezHandADC::DataADC, PrHand_ADC.getPackSizeData() * 2);
+				for (auto &mot : Motor)
+				{
+					if (mot.getEnabledADC() == _ADC_Motor_Enable)
+					{
+						/*Собираем данные с ацп и энкодера*/
+						ProtezHandUsbProtocol::datactrl.out_sub_data[*ProtezHandUsbProtocol::datactrl.ptr_adc_data] = ProtezHandADC::DataADC[0];
+						ProtezHandUsbProtocol::datactrl.out_sub_data[*ProtezHandUsbProtocol::datactrl.ptr_speed_data] = ProtezHandEncoder::ImpulsData[0];
+					}
+				}
+
+				CDC_Transmit_FS((uint8_t*)&ProtezHandUsbProtocol::datactrl.out_sub_data, ProtezHandUsbProtocol::datactrl.count_sub_data);
+				ProtezHandUsbProtocol::datactrl.count_out_data = 0;
 			}
 			ProtezHandUsbProtocol::FlagDataADC = false;
 		}
@@ -1095,24 +1116,24 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		/*********************************************/
 		/*********************************************/
 		/***************COLLECTING DATA***************/
-		if (tim_irq.counter_1 == (PrHand_Motor_typedef::MaxTimeInterval / ProtezHandEncoder::getCntPoint()))
-		{
-			tim_irq.counter_1 = 0;
-			for (auto &mot : Motor)
-			{
-				if (mot.getState() == _Working)
-				{
-					auto x = mot.cls_encoder.getCounter();
-					auto y = mot.cls_encoder.getTimePoint();
-					mot.cls_encoder.DataSPEED[mot.cls_encoder.indexDataSPEED] = (x - cnt_instrument.cnt_instr_1) / (y - cnt_instrument.cnt_instr_2 + 0.00001) * 10000.0;
-					mot.cls_encoder.indexDataSPEED++;
-
-
-					cnt_instrument.cnt_instr_1 = x;
-					cnt_instrument.cnt_instr_2 = y;
-				}
-			}
-		}
+//		if (tim_irq.counter_1 == (PrHand_Motor_typedef::MaxTimeInterval / ProtezHandEncoder::getCntPoint()))
+//		{
+//			tim_irq.counter_1 = 0;
+//			for (auto &mot : Motor)
+//			{
+//				if (mot.getState() == _Working)
+//				{
+//					auto x = mot.cls_encoder.getCounter();
+//					auto y = mot.cls_encoder.getTimePoint();
+//					mot.cls_encoder.DataSPEED[mot.cls_encoder.indexDataSPEED] = (x - cnt_instrument.cnt_instr_1) / (y - cnt_instrument.cnt_instr_2 + 0.00001) * 10000.0;
+//					mot.cls_encoder.indexDataSPEED++;
+//
+//
+//					cnt_instrument.cnt_instr_1 = x;
+//					cnt_instrument.cnt_instr_2 = y;
+//				}
+//			}
+//		}
 		/*********************************************/
 		/*********************************************/
 		if (ProtezHandUsbProtocol::tim_tx_counter_tick >= 100)	// 1ms
@@ -1167,17 +1188,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 					if ((PrHand_ADC.getStateADC() == _ADC_Configured) /*|| (Feedback Enabled)*/)
 					{
 						ProtezHandUsbProtocol::TimerTX_Start();
-						motor.cls_encoder.indexDataSPEED = 2;
+						motor.cls_encoder.indexDataSPEED = 0;
 					}
 
 					if (PrHand_ADC.getStateADC() == _ADC_Configured)
 					{
 						if (ProtezHandUsbProtocol::FlagUartControl)
 						{
-							ProtezHandUsbProtocol::UsartProtocol::transmitUartADCStartPack();
+							ProtezHandUsbProtocol::UsartProtocol::transmitUartDataStartPack();
 						}
-						else ProtezHandUsbProtocol::transmitADCStartPack();
+						else ProtezHandUsbProtocol::transmitStartPackData();
 						PrHand_ADC.StartADC();
+						ProtezHandEncoder::setEnable(true);
 					}
 
 					motor.Start();
@@ -1192,11 +1214,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 					if (PrHand_ADC.getStateADC() == _ADC_Working)
 					{
 						PrHand_ADC.StopADC();
+						ProtezHandEncoder::setEnable(false);
 						if (ProtezHandUsbProtocol::FlagUartControl)
 						{
-							ProtezHandUsbProtocol::UsartProtocol::transmitUartADCStopPack();
+							ProtezHandUsbProtocol::UsartProtocol::transmitUartDataStopPack();
 						}
-						else ProtezHandUsbProtocol::transmitADCStopPack();
+						else ProtezHandUsbProtocol::transmitStopPackData();
 						if(ProtezHandUsbProtocol::FlagUartControl) ProtezHandUsbProtocol::FlagUartControl = false;
 					}
 
@@ -1286,26 +1309,29 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 }
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	PrHand_Motor_typedef *t_mot = 0;
-	for (auto &mot : Motor) {
-		if (mot.cls_encoder.getPINmain() == GPIO_Pin) {
-			t_mot = &mot;
-			break;
+	if (ProtezHandEncoder::getEnable())
+	{
+		PrHand_Motor_typedef *t_mot = 0;
+		for (auto &mot : Motor) {
+			if (mot.cls_encoder.getPINmain() == GPIO_Pin) {
+				t_mot = &mot;
+				break;
+			}
 		}
+
+		if (HAL_GPIO_ReadPin(t_mot->cls_encoder.getPORsup(), t_mot->cls_encoder.getPINsup()) == t_mot->cls_encoder.PositiveSideRotate)
+		{
+			auto x = t_mot->cls_encoder.getCounter() + 1;
+			t_mot->cls_encoder.setCounter(x);
+			t_mot->cls_encoder.setTimePoint(GLB_Time[2]);
+
+		}
+		else
+		{
+
+		}
+
 	}
-
-	if (HAL_GPIO_ReadPin(t_mot->cls_encoder.getPORsup(), t_mot->cls_encoder.getPINsup()) == t_mot->cls_encoder.PositiveSideRotate)
-	{
-		auto x = t_mot->cls_encoder.getCounter() + 1;
-		t_mot->cls_encoder.setCounter(x);
-		t_mot->cls_encoder.setTimePoint(GLB_Time[2]);
-
-	}
-	else
-	{
-
-	}
-
 	/*************************************************************************************************/
 
 

@@ -133,6 +133,7 @@ void ProtezHandADC::StartADC()
 	HAL_TIM_Base_Start_IT(Tim);
 	HAL_ADC_Start_DMA(Adc, (uint32_t*)&DataADC, PackSize);
 
+
 	GLB_ADC_state = _ADC_Working;
 }
 void ProtezHandADC::StopADC()

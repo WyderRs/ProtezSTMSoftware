@@ -15,14 +15,8 @@ UART_HandleTypeDef *ProtezHandUsbProtocol::ProtezUART;
 /*TO PC FORMAT DATA*/
 
 
-uint8_t PR_PROTOCOL_PACK_ADC_START[2] = {0xEE, 0xDD};
-uint8_t PR_PROTOCOL_PACK_ADC_STOP[2] = {0xCC, 0xBB};
-
-uint8_t PR_PROTOCOL_PACK_SPEED_START[2] = {0xAE, 0xDE};
-uint8_t PR_PROTOCOL_PACK_SPEED_STOP[2] = {0x1A, 0x4B};
-
-uint8_t PR_PROTOCOL_PACK_FEEDBACK_START[2] = {0x44, 0xDD};
-uint8_t PR_PROTOCOL_PACK_FEEDBACK_STOP[2] = {0x77, 0xCC};
+uint8_t PR_PROTOCOL_PACK_DATA_START[2] = {0xEE, 0xDD};
+uint8_t PR_PROTOCOL_PACK_DATA_STOP[2] = {0xCC, 0xBB};
 
 
 std::vector<std::vector<uint8_t>> ProtezHandUsbProtocol::subPack;
@@ -41,6 +35,8 @@ _Bool ProtezHandUsbProtocol::FlagDataSPEED;
 _Bool ProtezHandUsbProtocol::FlagUartControl;
 
 uint8_t ProtezHandUsbProtocol::PackOtherSide[500];
+
+_datactrl ProtezHandUsbProtocol::datactrl;
 
 
 //std::queue<std::pair<uint8_t&, uint32_t>> ProtezHandUsbProtocol::Queue_SendData;
@@ -198,14 +194,40 @@ void ProtezHandUsbProtocol::selectorCommand()
     	ProtezHandUsbProtocol::setCommands();
     }
 
+    /*Определяем максимальное время работы*/
     PrHand_Motor_typedef::MaxTimeInterval = 0;
+    PrHand_Motor_typedef::ConfiguredMotor = 0;
+   	uint32_t temp_countEnabled = 0;
     for (auto &mot : Motor)
     {
     	if (mot.getWorkTime() * 10 > PrHand_Motor_typedef::MaxTimeInterval)
     	{
     		PrHand_Motor_typedef::MaxTimeInterval = mot.getWorkTime() * 10;
     	}
+    	if ((mot.getState() == _Configured) || (mot.getState() == _Launched))
+    	{
+    		PrHand_Motor_typedef::ConfiguredMotor++;
+    	}
     }
+
+
+    /*Устанавливаем стартовые позиции частей данных*/
+    ProtezHandUsbProtocol::datactrl.ptr_pack_start = 0; 	/*Расположение стартовых байтов пакета*/
+    ProtezHandUsbProtocol::datactrl.ptr_pack_stop = 0;		/*Расположение стоповых байтов пакета*/
+
+    ProtezHandUsbProtocol::datactrl.ptr_config_start = 0;	/*Расположение стартовых байтов данных конфига*/
+    ProtezHandUsbProtocol::datactrl.ptr_config_data = 0;	/*Расположение данных конфига*/
+    ProtezHandUsbProtocol::datactrl.ptr_config_stop = 0;	/*Расположение стопоовых байтов данных конфига*/
+
+    ProtezHandUsbProtocol::datactrl.ptr_adc_start = 0;		/*Расположение стартовых байтов данных ацп*/
+    ProtezHandUsbProtocol::datactrl.ptr_adc_data = 0;		/*Расположение данных ацп*/
+    ProtezHandUsbProtocol::datactrl.ptr_adc_stop = 0;		/*Расположение стопоовых байтов данных ацп*/
+    ProtezHandUsbProtocol::datactrl.ptr_speed_start= 0;		/*Расположение стартовых байтов данных энкодера*/
+    ProtezHandUsbProtocol::datactrl.ptr_speed_data = 0;		/*Расположение данных энкодера*/
+    ProtezHandUsbProtocol::datactrl.ptr_speed_stop = 0;		/*Расположение стопоовых байтов данных энкодера*/
+
+    ProtezHandUsbProtocol::datactrl.count_out_data = 0;		/*Устанавливаем общий размер посылки*/
+    ProtezHandUsbProtocol::datactrl.count_sub_data = PrHand_Motor_typedef::ConfiguredMotor * 40;		/*Устанавливаем размер промежуточных данных*/
 
     ProtezHandUsbProtocol::subPack.clear();
 }
@@ -553,13 +575,13 @@ void ProtezHandUsbProtocol::TimerTX_Stop()
 {
 	HAL_TIM_Base_Stop_IT(timer);
 }
-void ProtezHandUsbProtocol::transmitADCStartPack()
+void ProtezHandUsbProtocol::transmitStartPackData()
 {
-	CDC_Transmit_FS(PR_PROTOCOL_PACK_ADC_START, 2);
+	CDC_Transmit_FS(PR_PROTOCOL_PACK_DATA_START, 2);
 }
-void ProtezHandUsbProtocol::transmitADCStopPack()
+void ProtezHandUsbProtocol::transmitStopPackData()
 {
-	CDC_Transmit_FS(PR_PROTOCOL_PACK_ADC_STOP, 2);
+	CDC_Transmit_FS(PR_PROTOCOL_PACK_DATA_STOP, 2);
 }
 
 /*----------*/
@@ -573,13 +595,13 @@ void ProtezHandUsbProtocol::UsartProtocol::UsartCommand()
     ProtezHandUsbProtocol::setCommands();
     ProtezHandUsbProtocol::UsartProtocol::setUsartCommand.clear();
 }
-void ProtezHandUsbProtocol::UsartProtocol::transmitUartADCStartPack()
+void ProtezHandUsbProtocol::UsartProtocol::transmitUartDataStartPack()
 {
-	HAL_UART_Transmit_IT(ProtezUART, PR_PROTOCOL_PACK_ADC_START, 2);
+	HAL_UART_Transmit_IT(ProtezUART, PR_PROTOCOL_PACK_DATA_START, 2);
 }
-void ProtezHandUsbProtocol::UsartProtocol::transmitUartADCStopPack()
+void ProtezHandUsbProtocol::UsartProtocol::transmitUartDataStopPack()
 {
-	HAL_UART_Transmit_IT(ProtezUART, PR_PROTOCOL_PACK_ADC_STOP, 2);
+	HAL_UART_Transmit_IT(ProtezUART, PR_PROTOCOL_PACK_DATA_STOP, 2);
 }
 
 

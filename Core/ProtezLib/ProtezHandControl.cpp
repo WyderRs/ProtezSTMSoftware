@@ -15,6 +15,7 @@ TIM_HandleTypeDef* PrHand_Motor_typedef::GLBTimer;
 uint32_t PrHand_Motor_typedef::GLBTimerCounter = 0;
 
 uint32_t PrHand_Motor_typedef::MaxTimeInterval = 0;
+uint32_t PrHand_Motor_typedef::ConfiguredMotor = 0;
 
 PrHand_Motor_typedef::PrHand_Motor_typedef(uint8_t _id) : id(_id)
 {
