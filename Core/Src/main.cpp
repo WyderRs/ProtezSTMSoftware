@@ -1044,7 +1044,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 	else if (htim->Instance == TIM2)
 	{
-		uint8_t t = 0;
+		uint8_t t = ProtezHandEncoder::ImpulsDataCounter;
 		uint32_t x = 0;
 		for (auto &mot : Motor)
 		{
@@ -1053,6 +1053,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 				x = mot.cls_encoder.getCounter();
 				ProtezHandEncoder::ImpulsData[t++] = (uint8_t)(x & 0x0000FF);
 				ProtezHandEncoder::ImpulsData[t++] = (uint8_t)((x & 0x00FF00) >> 8);
+				ProtezHandEncoder::ImpulsDataCounter += 2;
 			}
 		}
 
@@ -1074,7 +1075,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	else if (htim->Instance == TIM9) // ТАЙМЕР ОТВЕЧАЮЩИЙ ЗА ОТПРАВКУ
 	{
 		ProtezHandUsbProtocol::tim_tx_counter_tick++;
-		/*Отправляем данные АЦП*/
+		/*Отправляем данные */
 		/*********************************************/
 		/*********************************************/
 		if (ProtezHandUsbProtocol::FlagDataADC)
@@ -1085,18 +1086,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			}
 			else
 			{
-				for (auto &mot : Motor)
+				/*Собираем данные с ацп и энкодера*/
+				for (uint32_t i = 0; i < ProtezHandUsbProtocol::datactrl.count_sub_data; i++)
 				{
-					if (mot.getEnabledADC() == _ADC_Motor_Enable)
-					{
-						/*Собираем данные с ацп и энкодера*/
-						ProtezHandUsbProtocol::datactrl.out_sub_data[*ProtezHandUsbProtocol::datactrl.ptr_adc_data] = ProtezHandADC::DataADC[0];
-						ProtezHandUsbProtocol::datactrl.out_sub_data[*ProtezHandUsbProtocol::datactrl.ptr_speed_data] = ProtezHandEncoder::ImpulsData[0];
-					}
+					ProtezHandUsbProtocol::datactrl.out_sub_data[ProtezHandUsbProtocol::datactrl.ptr_adc_data + i] = ProtezHandADC::DataADC[i];
 				}
-
+				for (uint32_t i = 0; i < ProtezHandUsbProtocol::datactrl.count_sub_data; i++)
+				{
+					ProtezHandUsbProtocol::datactrl.out_sub_data[ProtezHandUsbProtocol::datactrl.ptr_speed_data + i] = ProtezHandEncoder::ImpulsData[i];
+				}
 				CDC_Transmit_FS((uint8_t*)&ProtezHandUsbProtocol::datactrl.out_sub_data, ProtezHandUsbProtocol::datactrl.count_sub_data);
-				ProtezHandUsbProtocol::datactrl.count_out_data = 0;
+//				ProtezHandUsbProtocol::datactrl.count_out_data = 0;
+				ProtezHandEncoder::ImpulsDataCounter = 0;
 			}
 			ProtezHandUsbProtocol::FlagDataADC = false;
 		}
@@ -1195,7 +1196,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 					{
 						if (ProtezHandUsbProtocol::FlagUartControl)
 						{
-							ProtezHandUsbProtocol::UsartProtocol::transmitUartDataStartPack();
+//							ProtezHandUsbProtocol::UsartProtocol::transmitUartDataStartPack();
 						}
 						else ProtezHandUsbProtocol::transmitStartPackData();
 						PrHand_ADC.StartADC();
@@ -1215,9 +1216,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 					{
 						PrHand_ADC.StopADC();
 						ProtezHandEncoder::setEnable(false);
+						ProtezHandEncoder::ImpulsDataCounter = 0;
 						if (ProtezHandUsbProtocol::FlagUartControl)
 						{
-							ProtezHandUsbProtocol::UsartProtocol::transmitUartDataStopPack();
+//							ProtezHandUsbProtocol::UsartProtocol::transmitUartDataStopPack();
 						}
 						else ProtezHandUsbProtocol::transmitStopPackData();
 						if(ProtezHandUsbProtocol::FlagUartControl) ProtezHandUsbProtocol::FlagUartControl = false;

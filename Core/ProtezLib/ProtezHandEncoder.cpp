@@ -11,6 +11,7 @@
 uint32_t ProtezHandEncoder::cntPoints = 500;
 _Bool ProtezHandEncoder::fl_Enable;
 uint8_t ProtezHandEncoder::ImpulsData[500];
+uint32_t ProtezHandEncoder::ImpulsDataCounter;
 
 ProtezHandEncoder::ProtezHandEncoder()
 {

@@ -220,13 +220,14 @@ void ProtezHandUsbProtocol::selectorCommand()
     ProtezHandUsbProtocol::datactrl.ptr_config_stop = 0;	/*Расположение стопоовых байтов данных конфига*/
 
     ProtezHandUsbProtocol::datactrl.ptr_adc_start = 0;		/*Расположение стартовых байтов данных ацп*/
-    ProtezHandUsbProtocol::datactrl.ptr_adc_data = 0;		/*Расположение данных ацп*/
-    ProtezHandUsbProtocol::datactrl.ptr_adc_stop = 0;		/*Расположение стопоовых байтов данных ацп*/
-    ProtezHandUsbProtocol::datactrl.ptr_speed_start= 0;		/*Расположение стартовых байтов данных энкодера*/
-    ProtezHandUsbProtocol::datactrl.ptr_speed_data = 0;		/*Расположение данных энкодера*/
-    ProtezHandUsbProtocol::datactrl.ptr_speed_stop = 0;		/*Расположение стопоовых байтов данных энкодера*/
+    ProtezHandUsbProtocol::datactrl.ptr_adc_data = 2;		/*Расположение данных ацп*/
+    ProtezHandUsbProtocol::datactrl.ptr_adc_stop = PrHand_Motor_typedef::ConfiguredMotor * 40 + 2;		/*Расположение стопоовых байтов данных ацп*/
 
-    ProtezHandUsbProtocol::datactrl.count_out_data = 0;		/*Устанавливаем общий размер посылки*/
+    ProtezHandUsbProtocol::datactrl.ptr_speed_start= PrHand_Motor_typedef::ConfiguredMotor * 40 + 4;		/*Расположение стартовых байтов данных энкодера*/
+    ProtezHandUsbProtocol::datactrl.ptr_speed_data = PrHand_Motor_typedef::ConfiguredMotor * 40 + 6;		/*Расположение данных энкодера*/
+    ProtezHandUsbProtocol::datactrl.ptr_speed_stop = 2 * PrHand_Motor_typedef::ConfiguredMotor * 40 + 8;		/*Расположение стопоовых байтов данных энкодера*/
+
+    ProtezHandUsbProtocol::datactrl.count_out_data = 88;		/*Устанавливаем общий размер посылки*/
     ProtezHandUsbProtocol::datactrl.count_sub_data = PrHand_Motor_typedef::ConfiguredMotor * 40;		/*Устанавливаем размер промежуточных данных*/
 
     ProtezHandUsbProtocol::subPack.clear();

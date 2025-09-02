@@ -78,6 +78,7 @@ public:
 
 	static uint32_t cntPoints;
 	static uint8_t ImpulsData[500];
+	static uint32_t ImpulsDataCounter;
 
 };
 

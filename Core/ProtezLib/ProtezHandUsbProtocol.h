@@ -75,23 +75,23 @@ struct _datactrl
 	uint8_t out_data[10000];
 	uint8_t out_sub_data[1000];
 
-	uint8_t *ptr_pack_start;
-	uint8_t *ptr_pack_stop;
+	uint16_t ptr_pack_start;
+	uint16_t ptr_pack_stop;
 
-	uint8_t *ptr_config_start;
-	uint8_t *ptr_config_data;
-	uint8_t *ptr_config_stop;
+	uint16_t ptr_config_start;
+	uint16_t ptr_config_data;
+	uint16_t ptr_config_stop;
 
-	uint8_t *ptr_adc_start;
-	uint8_t *ptr_adc_data;
-	uint8_t *ptr_adc_stop;
+	uint16_t ptr_adc_start;
+	uint16_t ptr_adc_data;
+	uint16_t ptr_adc_stop;
 
-	uint8_t *ptr_speed_start;
-	uint8_t *ptr_speed_data;
-	uint8_t *ptr_speed_stop;
+	uint16_t ptr_speed_start;
+	uint16_t ptr_speed_data;
+	uint16_t ptr_speed_stop;
 
-	uint8_t count_out_data;
-	uint8_t count_sub_data;
+	uint32_t count_out_data;
+	uint32_t count_sub_data;
 };
 
 
