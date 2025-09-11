@@ -89,8 +89,8 @@ all: main-build
 main-build: Protez_v_5.0.elf secondary-outputs
 
 # Tool invocations
-Protez_v_5.0.elf Protez_v_5.0.map: $(OBJS) $(USER_OBJS) C:\ProtezHolder\ProtezSTMSoftware\STM32F411RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "Protez_v_5.0.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\ProtezHolder\ProtezSTMSoftware\STM32F411RETX_FLASH.ld" -Wl,-Map="Protez_v_5.0.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+Protez_v_5.0.elf Protez_v_5.0.map: $(OBJS) $(USER_OBJS) C:\ProtezHolder\ProtezSTMSoftware_alt_plus\ProtezSTMSoftware\STM32F411RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "Protez_v_5.0.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\ProtezHolder\ProtezSTMSoftware_alt_plus\ProtezSTMSoftware\STM32F411RETX_FLASH.ld" -Wl,-Map="Protez_v_5.0.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

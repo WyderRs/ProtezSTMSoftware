@@ -1,0 +1,9 @@
+../Core/ProtezLib/module.c:28:6:module_motor_Stop	8	static
+../Core/ProtezLib/module.c:39:6:module_motor_Start	8	static
+../Core/ProtezLib/module.c:51:6:module_setADCParam	0	static
+../Core/ProtezLib/module.c:65:6:module_setEncParam	0	static
+../Core/ProtezLib/module.c:83:6:module_setTimParam	16	static
+../Core/ProtezLib/module.c:119:14:module_Init	48	static
+../Core/ProtezLib/module.c:185:6:module_motor_SetPwm	0	static
+../Core/ProtezLib/module.c:153:6:module_motor_SetParam	16	static
+../Core/ProtezLib/module.c:214:6:aboba	24	static

@@ -1,0 +1,4 @@
+../Core/ProtezLib/protocol.c:31:6:protocol_Init	16	static
+../Core/ProtezLib/protocol.c:40:6:protocol_read_raw	808	static
+../Core/ProtezLib/protocol.c:270:6:protocol_read_raw_uart	808	static
+../Core/ProtezLib/protocol.c:407:6:HAL_UART_RxCpltCallback	24	static

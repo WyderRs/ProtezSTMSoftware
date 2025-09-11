@@ -9,7 +9,7 @@
 #define PROTEZLIB_PROTEZHANDENCODER_H_
 
 #include <stdbool.h>
-#include <utility>
+//#include <utility>
 #include <stdint.h>
 
 #include "stm32f4xx_hal.h"
@@ -25,62 +25,62 @@ enum encSide
 };
 
 
-class ProtezHandEncoder {
-private:
-	uint32_t counter;
-	uint32_t timePoint;
-	encSide side;
-
-	GPIO_TypeDef *PORT;
-	uint16_t PIN;
-
-	GPIO_TypeDef *PORT_sup;
-	uint16_t PIN_sup;
-
-	static _Bool fl_Enable; /*Флаг инициализации работы энкодера*/
-
-
-public:
-	ProtezHandEncoder();
-	~ProtezHandEncoder();
-
-	/*Устанавливает значение счетчика*/
-	void setCounter(uint32_t);
-	/*Возвращает значени счетчика*/
-	uint32_t getCounter();
-	/*Устанавливает время точки измерения в us*/
-	void setTimePoint(uint32_t);
-	/*Возвращает время точки измерения в us*/
-	uint32_t getTimePoint();
-	/*Устанавливает сторону вращения энкодера*/
-	void setSide(encSide);
-	/*Возвращает сторону вращения энкодера*/
-	encSide getSide();
-	/*Устанавливает порты и выводы энкодера*/
-	void setAllGPIO(GPIO_TypeDef*, uint16_t, GPIO_TypeDef*, uint16_t, GPIO_PinState);
-	/*Возвращает порт опорного вывода энкодера*/
-	GPIO_TypeDef* getPORTmain();
-	/*Возвращает номер опорного вывода энкодера*/
-	uint16_t getPINmain();
-	/*Возвращает порт вспомогательного вывода энкодера*/
-	GPIO_TypeDef* getPORsup();
-	/*Возвращает номер вспомогательного вывода энкодера*/
-	uint16_t getPINsup();
-	/*Установка разрешения на работу с энкодером*/
-	static void setEnable(_Bool);
-	/*Возвращает разрешено ли работать с энкодером*/
-	static _Bool getEnable();
-
-
-	uint16_t DataSPEED[1000] = {0, };
-	uint32_t indexDataSPEED = 0;
-	GPIO_PinState PositiveSideRotate = GPIO_PIN_RESET;
-
-	static uint32_t cntPoints;
-	static uint8_t ImpulsData[500];
-	static uint32_t ImpulsDataCounter;
-
-};
+//class ProtezHandEncoder {
+//private:
+//	uint32_t counter;
+//	uint32_t timePoint;
+//	encSide side;
+//
+//	GPIO_TypeDef *PORT;
+//	uint16_t PIN;
+//
+//	GPIO_TypeDef *PORT_sup;
+//	uint16_t PIN_sup;
+//
+//	static _Bool fl_Enable; /*Флаг инициализации работы энкодера*/
+//
+//
+//public:
+//	ProtezHandEncoder();
+//	~ProtezHandEncoder();
+//
+//	/*Устанавливает значение счетчика*/
+//	void setCounter(uint32_t);
+//	/*Возвращает значени счетчика*/
+//	uint32_t getCounter();
+//	/*Устанавливает время точки измерения в us*/
+//	void setTimePoint(uint32_t);
+//	/*Возвращает время точки измерения в us*/
+//	uint32_t getTimePoint();
+//	/*Устанавливает сторону вращения энкодера*/
+//	void setSide(encSide);
+//	/*Возвращает сторону вращения энкодера*/
+//	encSide getSide();
+//	/*Устанавливает порты и выводы энкодера*/
+//	void setAllGPIO(GPIO_TypeDef*, uint16_t, GPIO_TypeDef*, uint16_t, GPIO_PinState);
+//	/*Возвращает порт опорного вывода энкодера*/
+//	GPIO_TypeDef* getPORTmain();
+//	/*Возвращает номер опорного вывода энкодера*/
+//	uint16_t getPINmain();
+//	/*Возвращает порт вспомогательного вывода энкодера*/
+//	GPIO_TypeDef* getPORsup();
+//	/*Возвращает номер вспомогательного вывода энкодера*/
+//	uint16_t getPINsup();
+//	/*Установка разрешения на работу с энкодером*/
+//	static void setEnable(_Bool);
+//	/*Возвращает разрешено ли работать с энкодером*/
+//	static _Bool getEnable();
+//
+//
+//	uint16_t DataSPEED[1000] = {0, };
+//	uint32_t indexDataSPEED = 0;
+//	GPIO_PinState PositiveSideRotate = GPIO_PIN_RESET;
+//
+//	static uint32_t cntPoints;
+//	static uint8_t ImpulsData[500];
+//	static uint32_t ImpulsDataCounter;
+//
+//};
 
 
 

@@ -23,9 +23,11 @@
 
 /* USER CODE BEGIN INCLUDE */
 #include "stdbool.h"
-#include "../ProtezLib/ProtezHandControl.h"
-#include "../ProtezLib/ProtezHandUsbProtocol.h"
-#include <vector>
+#include "../ProtezLib/protocol.h"
+
+extern uint8_t PR_PROTOCOL_START_PACK[2];
+extern uint8_t PR_PROTOCOL_STOP_PACK[2];
+
 
 
 /* USER CODE END INCLUDE */
@@ -38,7 +40,10 @@
 /* Private variables ---------------------------------------------------------*/
 
 _Bool flag_start = false;
-std::vector<uint8_t> buffer;
+//std::vector<uint8_t> buffer;
+
+uint8_t		buffer_my[200];
+uint32_t 	buffer_counter;
 
 
 /* USER CODE END PV */
@@ -283,25 +288,79 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 //	  dada[j] = Buf[j];
 //  }
 
-  if ((Buf[0] == PR_PROTOCOL_START_PACK.first) && (Buf[1] == PR_PROTOCOL_START_PACK.second))
+
+
+  if ((Buf[0] == PR_PROTOCOL_START_PACK[0]) && (Buf[1] == PR_PROTOCOL_START_PACK[1]))
   {
 	  flag_start = true;
-	  buffer.clear();
+	  for (uint16_t i = 0; i < buffer_counter; i++) buffer_my[i] = 0;
+	  buffer_counter = 0;
   }
 
   if (flag_start) {
-	  for (uint32_t i = (!buffer.empty() ? 0 : 2); i < *Len; i++) {
-		  if ((Buf[i - 1] == PR_PROTOCOL_STOP_PACK.first) && (Buf[i] == PR_PROTOCOL_STOP_PACK.second)) {
-			  buffer.pop_back();
-
-			  ProtezHandUsbProtocol::readRawPack(buffer);
-			  buffer.clear();
+	  uint32_t i;
+	  if (buffer_counter == 0)
+	  {
+		  i = 2;
+	  }
+	  else if (buffer_counter > 0)
+	  {
+		  i = 0;
+	  }
+	  for (; i < *Len; i++)
+	  {
+		  if ((Buf[i - 1] == PR_PROTOCOL_STOP_PACK[0]) && (Buf[i] == PR_PROTOCOL_STOP_PACK[1]))
+		  {
+			  buffer_my[buffer_counter] = 0;
+			  protocol_read_raw(buffer_my, buffer_counter);
 			  flag_start = false;
+			  buffer_counter = 0;
 			  break;
 		  }
-		  else buffer.push_back(Buf[i]);
+		  else
+		  {
+			  buffer_my[buffer_counter] = Buf[i];
+			  buffer_counter++;
+		  }
 	  }
   }
+
+
+//  	  for (uint32_t i = (!buffer.empty() ? 0 : 2); i < *Len; i++) {
+//  		  if ((Buf[i - 1] == PR_PROTOCOL_STOP_PACK.first) && (Buf[i] == PR_PROTOCOL_STOP_PACK.second)) {
+//  			  buffer.pop_back();
+//
+//  			  ProtezHandUsbProtocol::readRawPack(buffer);
+//  			  buffer.clear();
+//  			  flag_start = false;
+//  			  break;
+//  		  }
+//  		  else buffer.push_back(Buf[i]);
+//  	  }
+//    }
+//
+//
+//
+//
+//  if ((Buf[0] == PR_PROTOCOL_START_PACK.first) && (Buf[1] == PR_PROTOCOL_START_PACK.second))
+//  {
+//	  flag_start = true;
+//	  buffer.clear();
+//  }
+//
+//  if (flag_start) {
+//	  for (uint32_t i = (!buffer.empty() ? 0 : 2); i < *Len; i++) {
+//		  if ((Buf[i - 1] == PR_PROTOCOL_STOP_PACK.first) && (Buf[i] == PR_PROTOCOL_STOP_PACK.second)) {
+//			  buffer.pop_back();
+//
+//			  ProtezHandUsbProtocol::readRawPack(buffer);
+//			  buffer.clear();
+//			  flag_start = false;
+//			  break;
+//		  }
+//		  else buffer.push_back(Buf[i]);
+//	  }
+//  }
 
   return (USBD_OK);
   /* USER CODE END 6 */
