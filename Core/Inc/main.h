@@ -63,13 +63,10 @@ void Error_Handler(void);
 #define SCK_EN_GPIO_Port GPIOB
 #define SW1_Pin GPIO_PIN_2
 #define SW1_GPIO_Port GPIOB
-#define SW1_EXTI_IRQn EXTI2_IRQn
 #define SW2_Pin GPIO_PIN_10
 #define SW2_GPIO_Port GPIOB
-#define SW2_EXTI_IRQn EXTI15_10_IRQn
 #define SW3_Pin GPIO_PIN_11
 #define SW3_GPIO_Port GPIOB
-#define SW3_EXTI_IRQn EXTI15_10_IRQn
 #define M1_I2_Pin GPIO_PIN_15
 #define M1_I2_GPIO_Port GPIOA
 #define M1_I1_Pin GPIO_PIN_3
