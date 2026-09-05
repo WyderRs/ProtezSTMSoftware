@@ -22,7 +22,7 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+#include <stdbool.h>
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,7 +49,13 @@
   */
 
 /* USER CODE BEGIN PRIVATE_TYPES */
-
+extern _Bool CMD_HOME;
+extern _Bool CMD_MAIN;
+extern _Bool CMD_GET;
+extern _Bool CMD_HDSP;
+extern _Bool CMD_LIM;
+extern usb_command_t u_cmd[3];
+extern lim_t u_lim[3];
 /* USER CODE END PRIVATE_TYPES */
 
 /**
@@ -109,7 +115,7 @@ uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
-
+extern uint8_t USB_Angle[24];
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
@@ -261,6 +267,88 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   /* USER CODE BEGIN 6 */
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+
+  if ((Buf[0] == 'H') && (Buf[1] == 'O') && (Buf[2] == 'M') && (Buf[3] == 'E')) {
+	  CMD_HOME = true;
+  }
+  else if ((Buf[0] == 'G') && (Buf[1] == 'E') && (Buf[2] == 'T')) {
+	  CMD_GET = true;
+  }
+  else if ((Buf[0] == 'H') && (Buf[1] == 'D') && (Buf[2] == 'S') && (Buf[3] == 'P')) {
+	  CMD_HDSP = true;
+  }
+  else if ((Buf[0] == 'M')) {
+
+	  uint8_t cnt = 0;
+	  if ((Buf[cnt] == 'M')) {
+		  u_cmd[Buf[cnt + 1]].number_motor 		= Buf[cnt + 1];
+		  u_cmd[Buf[cnt + 1]].angle_trg 		= (float)((Buf[cnt + 2] << 24) |
+				  	  	  	  	  	  	  	  	  	  	   (Buf[cnt + 3] << 16) |
+				  	  	  	  	  	  	  	  	  	  	   (Buf[cnt + 4] << 8)  |
+														   (Buf[cnt + 5] << 0));
+	  }
+	  if (Buf[cnt + 6] == 'O') {
+		  u_cmd[Buf[cnt + 1]].op_cmd		= Buf[cnt + 7];
+	  }
+	  else {
+		  u_cmd[Buf[cnt + 1]].number_motor 	= 0;
+		  u_cmd[Buf[cnt + 1]].angle_trg 	= 0;
+		  u_cmd[Buf[cnt + 1]].op_cmd 		= 0;
+		  return 0;
+	  }
+	  cnt = 8;
+	  if ((Buf[cnt] == 'M')) {
+		  u_cmd[Buf[cnt + 1]].number_motor 		= Buf[cnt + 1];
+		  u_cmd[Buf[cnt + 1]].angle_trg 		= (float)((Buf[cnt + 2] << 24) |
+				  	  	  	  	  	  	  	  	  	  	   (Buf[cnt + 3] << 16) |
+				  	  	  	  	  	  	  	  	  	  	   (Buf[cnt + 4] << 8)  |
+														   (Buf[cnt + 5] << 0));
+	  }
+	  if (Buf[cnt + 6] == 'O') {
+		  u_cmd[Buf[cnt + 1]].op_cmd		= Buf[cnt + 7];
+	  }
+	  else {
+		  u_cmd[Buf[cnt + 1]].number_motor 	= 0;
+		  u_cmd[Buf[cnt + 1]].angle_trg 	= 0;
+		  u_cmd[Buf[cnt + 1]].op_cmd 		= 0;
+		  return 0;
+	  }
+	  cnt = 16;
+	  if ((Buf[cnt] == 'M')) {
+		  u_cmd[Buf[cnt + 1]].number_motor 		= Buf[cnt + 1];
+		  u_cmd[Buf[cnt + 1]].angle_trg 		= (float)((Buf[cnt + 2] << 24) |
+				  	  	  	  	  	  	  	  	  	  	   (Buf[cnt + 3] << 16) |
+				  	  	  	  	  	  	  	  	  	  	   (Buf[cnt + 4] << 8)  |
+														   (Buf[cnt + 5] << 0));
+	  }
+	  if (Buf[cnt + 6] == 'O') {
+		  u_cmd[Buf[cnt + 1]].op_cmd		= Buf[cnt + 7];
+	  }
+	  else {
+		  u_cmd[Buf[cnt + 1]].number_motor 	= 0;
+		  u_cmd[Buf[cnt + 1]].angle_trg 	= 0;
+		  u_cmd[Buf[cnt + 1]].op_cmd 		= 0;
+		  return 0;
+	  }
+
+	  CMD_MAIN = true;
+	  CDC_Transmit_FS((uint8_t*)"OK____", 6u);
+  }
+  else if ((Buf[0] == 'L') && (Buf[1] == 'I') && (Buf[2] == 'M')) {
+	  u_lim[Buf[3]].lim_min = (float)((Buf[4] + Buf[5] + Buf[6] + Buf[7]) / 1000.0);
+	  u_lim[Buf[3]].lim_max = (float)((Buf[8] + Buf[9] + Buf[10] + Buf[11]) / 1000.0);
+	  CDC_Transmit_FS((uint8_t*)"OK____", 6u);
+  }
+  else if ((Buf[0] == 'S') && (Buf[1] == 'P') && (Buf[2] == 'D') && (Buf[3] == 'M')) {
+	  u_cmd[Buf[4]].speed 		= ((Buf[5] << 8) | (Buf[6] << 0)) * 10;
+	  if (u_cmd[Buf[4]].speed >= 1000) u_cmd[Buf[4]].speed = 1000;
+	  CDC_Transmit_FS((uint8_t*)"OK____", 6u);
+  }
+  else if ((Buf[0] == 'D') && (Buf[1] == 'E') && (Buf[2] == 'V') && (Buf[3] == 'I') && (Buf[4] == 'N') && (Buf[5] == 'F') && (Buf[6] == 'O')) {
+	  CDC_Transmit_FS((uint8_t*)"Exo-glove (CyberMed): Hardware ver: 6.0", 39u);
+  }
+
+
   return (USBD_OK);
   /* USER CODE END 6 */
 }

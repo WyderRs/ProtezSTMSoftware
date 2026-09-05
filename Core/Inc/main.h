@@ -31,11 +31,23 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdbool.h>
+#include <math.h>
 
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+typedef struct usb_command_t {
+	uint8_t 	number_motor;
+	float 		angle_trg;
+	uint8_t		op_cmd;
+	uint32_t	speed;
+} usb_command_t;
+typedef struct lim_t {
+	float lim_min;
+	float lim_max;
+} lim_t ;
 
 /* USER CODE END ET */
 
@@ -61,12 +73,6 @@ void Error_Handler(void);
 #define SPI_CS_GPIO_Port GPIOB
 #define SCK_EN_Pin GPIO_PIN_1
 #define SCK_EN_GPIO_Port GPIOB
-#define SW1_Pin GPIO_PIN_2
-#define SW1_GPIO_Port GPIOB
-#define SW2_Pin GPIO_PIN_10
-#define SW2_GPIO_Port GPIOB
-#define SW3_Pin GPIO_PIN_11
-#define SW3_GPIO_Port GPIOB
 #define M1_I2_Pin GPIO_PIN_15
 #define M1_I2_GPIO_Port GPIOA
 #define M1_I1_Pin GPIO_PIN_3
